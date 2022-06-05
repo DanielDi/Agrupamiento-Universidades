@@ -10,3 +10,35 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
+#Lectura de datos
+
+```{r}
+df <- read.csv("datos/CollegeScorecard.csv")
+```
+
+#Limpieza de la BD
+
+```{r}
+# Más de un dato nulo
+df2 <-df[ , colSums(is.na(df)) == 0]
+
+# 10% nulo
+df3 <- df[,-which(colMeans(is.na(df)) >= 0.1)]
+```
+
+# Componentes principales
+
+```{r}
+df32 <- na.omit(df3)
+nums <- unlist(lapply(df32, is.numeric), use.names = FALSE)  
+df33 <- df32[, nums]
+PCA <- princomp(~ ., data = df33, cor = TRUE, scores=TRUE)
+summary(PCA)
+```
+
+# Modelo
+
+```{r}
+
+```
+
