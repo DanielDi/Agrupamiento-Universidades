@@ -13,17 +13,25 @@ knitr::opts_chunk$set(echo = TRUE)
 #Lectura de datos
 
 ```{r}
-df <- read.csv("datos/CollegeScorecard.csv")
+datos <- read.csv("datos/CollegeScorecard.csv")
 ```
 
 #Limpieza de la BD
 
 ```{r}
-# Más de un dato nulo
-df2 <-df[ , colSums(is.na(df)) == 0]
+# Se dejan columnas sin valores nulos
+df <- datos[ , colSums(is.na(df)) == 0]
+
+# Convertir numericas a categoricas
+# Considerar valores PrivacySupressed
+# Ver celdas vacias que no son NAN
+columns_to_chr <- subset(df, select = c(CONTROL))
+sapply(columns_to_chr, as.character)
+
+str(df)
 
 # 10% nulo
-df3 <- df[,-which(colMeans(is.na(df)) >= 0.1)]
+# df3 <- df[,-which(colMeans(is.na(df)) >= 0.1)]
 ```
 
 # Componentes principales
