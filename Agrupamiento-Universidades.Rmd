@@ -7,6 +7,10 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(magrittr)
+library(convertr)
+library(dplyr)
+library(stringr)
 ```
 
 
@@ -19,30 +23,45 @@ datos <- read.csv("datos/CollegeScorecard.csv")
 #Limpieza de la BD
 
 ```{r}
-# Se dejan columnas sin valores nulos
-df <- datos[ , colSums(is.na(df)) == 0]
+# Reemplazar algunos valores con NA
+df <- replace(datos, datos=="PrivacySuppressed", NA)
+df <- replace(df, df==" ", NA)
+df <- replace(df, df=="", NA)
 
-# Convertir numericas a categoricas
-# Considerar valores PrivacySupressed
-# Ver celdas vacias que no son NAN
-columns_to_chr <- subset(df, select = c(CONTROL))
-sapply(columns_to_chr, as.character)
+# Se borran columnas con valores nulos (>20%)
+df <- df[,-which(colMeans(is.na(df)) >= 0.2)]
 
-str(df)
+# Se borran filas con valores nulos
+# delete.na <- function(df, n=0) {
+#  df[rowSums(is.na(df)) <= n,]
+# }
+# df <- delete.na(df)
 
-# 10% nulo
-# df3 <- df[,-which(colMeans(is.na(df)) >= 0.1)]
+#Eliminar columnas manualmente
+df <- subset(df, select = -c(INSTNM, NPCURL, INSTURL))
 ```
 
-# Componentes principales
+# Convertir los tipos de datos
+```{r}
+columnas <- data.frame(colnames(df))
+
+columnas_CIP <- columnas %>% 
+  filter(str_detect(colnames.df., "^CIP"))
+
+df <- df %>% 
+  mutate_at(vars(main, region, CURROPER), list(as.factor)) %>% 
+  mutate_at(vars(columnas_CIP$colnames.df.), list(as.factor))
+```
 
 ```{r}
-df32 <- na.omit(df3)
-nums <- unlist(lapply(df32, is.numeric), use.names = FALSE)  
-df33 <- df32[, nums]
-PCA <- princomp(~ ., data = df33, cor = TRUE, scores=TRUE)
-summary(PCA)
+#Separar df por tipo de columna
+# colSums(is.na(df)/7804)
+df_fact <- df[sapply(df, is.factor)]
+df <- df %>% mutate(across(.cols=where(is.character), .fns=as.factor))
+df_num <- df[sapply(df, is.numeric)]
 ```
+
+
 
 # Modelo
 
