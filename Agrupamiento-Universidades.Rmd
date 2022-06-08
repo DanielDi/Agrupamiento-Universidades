@@ -56,9 +56,15 @@ df <- df %>%
 ```{r}
 #Separar df por tipo de columna
 # colSums(is.na(df)/7804)
-df_fact <- df[sapply(df, is.factor)]
+
+#Convertir todos los chr a factor
 df <- df %>% mutate(across(.cols=where(is.character), .fns=as.factor))
+df_fact <- df[sapply(df, is.factor)]
+
 df_num <- df[sapply(df, is.numeric)]
+
+#TODO
+# addNA para añadir NA como level del factor.
 ```
 
 
