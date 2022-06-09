@@ -74,6 +74,7 @@ df_num <- df[sapply(df, is.numeric)]
 
 #TODO
 # addNA para añadir NA como level del factor.
+# df <- modify(df, addNA)
 ```
 
 ```{r}
