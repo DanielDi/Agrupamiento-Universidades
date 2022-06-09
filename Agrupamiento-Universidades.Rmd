@@ -11,16 +11,23 @@ library(magrittr)
 library(convertr)
 library(dplyr)
 library(stringr)
+library(factoextra)
+# library(zoo)
 ```
 
 
-#Lectura de datos
+# Lectura de datos
 
 ```{r}
 datos <- read.csv("datos/CollegeScorecard.csv")
 ```
 
-#Limpieza de la BD
+# Procesamiento de los datos
+
+El conjunto de datos cuentas con 1725 características, sin embargo muchas de ellas no contienen información. Por esta razón se deciden eliminar las característica que tengan más del 20% en valores NaN. Por otra parte, el conjunto de datos contiene diferentes formas para representar los valores vacíos, por ejemplo cadenas de texto vacías o con espacios y, adicionalmente, hay registros con valores en *PrivacySuppressed*. Todos estos valores se recopilaron y se replazaron por el objeto NA de R.  
+
+Existen variables (INSTNM, NPCURL, INSTURL) con todos los valores, pero no aportan información para el análisis. Estas columnas también fueron eliminadas del conjunto de datos.
+
 
 ```{r}
 # Reemplazar algunos valores con NA
@@ -37,11 +44,13 @@ df <- df[,-which(colMeans(is.na(df)) >= 0.2)]
 # }
 # df <- delete.na(df)
 
-#Eliminar columnas manualmente
-df <- subset(df, select = -c(INSTNM, NPCURL, INSTURL))
+# Eliminar columnas manualmente
+df <- subset(df, select = -c(INSTNM, NPCURL, INSTURL, UNITID, 
+                             OPEID, opeid6))
 ```
 
-# Convertir los tipos de datos
+## Convertir los tipos de datos
+
 ```{r}
 columnas <- data.frame(colnames(df))
 
@@ -67,7 +76,32 @@ df_num <- df[sapply(df, is.numeric)]
 # addNA para añadir NA como level del factor.
 ```
 
+```{r}
+# División de los datos numéricos y categóricos
 
+df_nums <- df %>% 
+    select_if(is.numeric)
+```
+ 
+## Interpolación de los datos faltantes
+
+```{r}
+df_nums <- as.data.frame(na.approx(df_nums, rule = 2))
+```
+
+# Componentes principales
+
+```{r}
+
+nums_cp <- prcomp(df_nums_est, scale = TRUE, center = TRUE)
+fviz_eig(nums_cp, ncp = 50)
+fviz_pca_ind(nums_cp,
+             col.ind = "cos2", # Color by the quality of representation
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE     # Avoid text overlapping
+             )
+summary(nums_cp)
+```
 
 # Modelo
 
