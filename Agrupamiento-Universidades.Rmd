@@ -31,7 +31,7 @@ Existen variables (INSTNM, NPCURL, INSTURL) con todos los valores, pero no aport
 
 ```{r}
 # Reemplazar algunos valores con NA
-df <- replace(datos, datos=="PrivacySuppressed", NA)
+df <- replace(datos, datos=="PrivacySuppressed", NA) # revisar: parece que quedan como strings
 df <- replace(df, df==" ", NA)
 df <- replace(df, df=="", NA)
 
@@ -47,6 +47,8 @@ df <- df[,-which(colMeans(is.na(df)) >= 0.2)]
 # Eliminar columnas manualmente
 df <- subset(df, select = -c(INSTNM, NPCURL, INSTURL, UNITID, 
                              OPEID, opeid6))
+
+# Algunas variables, a pesar de ser numéricas, tienen muy poca variabilidad: poolyrs
 ```
 
 ## Convertir los tipos de datos
@@ -58,8 +60,13 @@ columnas_CIP <- columnas %>%
   filter(str_detect(colnames.df., "^CIP"))
 
 df <- df %>% 
-  mutate_at(vars(main, region, CURROPER), list(as.factor)) %>% 
+  mutate_at(vars(main, region, CONTROL, CURROPER, HCM2, LOCALE, DISTANCEONLY, STABBR, st_fips,
+                 HBCU, PBI, ANNHI, TRIBAL, AANAPII, HSI, NANTI, MENONLY, WOMENONLY, PREDDEG, HIGHDEG,
+                 CURROPER), 
+            list(as.factor)) %>% 
   mutate_at(vars(columnas_CIP$colnames.df.), list(as.factor))
+
+# st_fips se puede borrar y dejar solo region
 ```
 
 ```{r}
@@ -68,7 +75,8 @@ df <- df %>%
 
 #Convertir todos los chr a factor
 df <- df %>% mutate(across(.cols=where(is.character), .fns=as.factor))
-df_fact <- df[sapply(df, is.factor)]
+
+df_fact <- df[sapply(df, is.factor)] # Acá quedan variables numéricas (RARO xd)
 
 df_num <- df[sapply(df, is.numeric)]
 
