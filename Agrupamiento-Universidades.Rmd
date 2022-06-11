@@ -14,7 +14,6 @@ library(stringr)
 library(factoextra)
 library(zoo)
 library(purrr)
-install.packages("Gifi", repos="http://R-Forge.R-project.org")
 library(Gifi)
 ```
 
@@ -256,6 +255,7 @@ Como se calcularon las componentes para un subconjunto de variables, entonces es
 df_num_scale_completed <- df_num_scale[,!(colnames(df_num_scale) %in% colnames(df_pcip))]
 df_num_scale_completed <- df_num_scale_completed[,!(colnames(df_num_scale_completed) %in% colnames(df_ugds))]
 
+df_num_no_cp <- df_num_scale_completed
 # Unifica las proyecciones con las variables que se tienen
 df_num_scale_completed <- cbind(df_num_scale_completed, df_pcip_proy)
 df_num_scale_completed <- cbind(df_num_scale_completed, df_ugds_proy)
@@ -269,4 +269,26 @@ colnames(df_num_scale_completed)
 # Modelo
 
 ```{r, echo=FALSE}
+# Clúster para las UGDS
+fviz_nbclust(ugds_cp$scores, FUNcluster=kmeans)
+eclust(ugds_cp$scores, "kmeans", hc_metric="eucliden",k=2)
 ```
+```{r, echo = FALSE}
+# Clúster para las PCIP
+fviz_nbclust(pcip_cp$scores, FUNcluster=kmeans)
+eclust(pcip_cp$scores, "kmeans", hc_metric="eucliden",k=3)
+```
+
+```{r, echo = FALSE}
+# Clúster para las variables sin componente
+fviz_nbclust(df_num_no_cp, FUNcluster=kmeans)
+eclust(df_num_no_cp, "kmeans", hc_metric="eucliden",k=2)
+```
+
+```{r, echo=FALSE}
+# Cluśter de todo el conjunto de datos
+km1<-eclust(df_num_scale_completed, "kmeans", hc_metric="eucliden",k=2)
+
+```
+
+
