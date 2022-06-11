@@ -13,7 +13,6 @@ library(dplyr)
 library(stringr)
 library(factoextra)
 library(zoo)
-library(clusterSim)
 ```
 
 
@@ -107,20 +106,37 @@ df_num <- rapply(df_num, zoo::na.fill,"numeric",fill="extend",how="replace")
 La reducción de componentes se hará con variables relacionadas.
 
 ```{r}
-# Extrar todas las PCIP
+cols_nums <- data.frame(colnames(df_num))
+
+# Obtiene el rango de columnas llamadas PCIP*
+df_pcip <- cols_nums %>% 
+  filter(str_detect(colnames.df_num., "^PCIP"))
+
+df_pcip <- subset(df_num, select = df_pcip$colnames.df_num.)
+
+# Obtiene el rango de columnas llamadas UGDS*
+df_ugds <- cols_nums %>% 
+  filter(str_detect(colnames.df_num., "^UGDS"))
+
+df_ugds <- subset(df_num, select = df_ugds$colnames.df_num.)
 ```
 
 # Componentes principales
 
 ```{r}
-nums_cp <- prcomp(df_num, scale = TRUE, center = TRUE)
-fviz_eig(nums_cp, ncp = 50)
+ugds_cp <- prcomp(df_ugds, scale = TRUE, center = TRUE)
+summary(ugds_cp)
+
+pcip_cp <- prcomp(df_pcip, scale = TRUE, center = TRUE)
+summary(pcip_cp)
+```
+
+```{r}
+fviz_eig(pcip_cp, ncp = 30)
 fviz_pca_ind(nums_cp,
              col.ind = "cos2", # Color by the quality of representation
              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-             repel = TRUE     # Avoid text overlapping
-             )
-summary(nums_cp)
+             repel = TRUE     # Avoid text overlapping)
 ```
 
 # Modelo
