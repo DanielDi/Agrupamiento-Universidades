@@ -12,7 +12,8 @@ library(convertr)
 library(dplyr)
 library(stringr)
 library(factoextra)
-# library(zoo)
+library(zoo)
+library(clusterSim)
 ```
 
 
@@ -78,31 +79,41 @@ df <- df %>% mutate(across(.cols=where(is.character), .fns=as.factor))
 
 df_fact <- df[sapply(df, is.factor)] # Acá quedan variables numéricas (RARO xd)
 
-df_num <- df[sapply(df, is.numeric)]
+index_i <- grep("CURROPER", colnames(df_fact))+1
+index_s <- ncol(df_fact)
+
+df_aux <- df_fact[c(index_i:index_s)]
+
+df_aux <- mutate_all(df_aux, as.numeric)
+
+
+
+df_num <- df %>% 
+    select_if(is.numeric)
+
+df_num <- cbind(df_num, df_aux)
 
 #TODO
 # addNA para añadir NA como level del factor.
 # df <- modify(df, addNA)
 ```
-
-```{r}
-# División de los datos numéricos y categóricos
-
-df_nums <- df %>% 
-    select_if(is.numeric)
-```
  
 ## Interpolación de los datos faltantes
 
 ```{r}
-df_nums <- as.data.frame(na.approx(df_nums, rule = 2))
+df_num <- rapply(df_num, zoo::na.fill,"numeric",fill="extend",how="replace")
+```
+
+La reducción de componentes se hará con variables relacionadas.
+
+```{r}
+# Extrar todas las PCIP
 ```
 
 # Componentes principales
 
 ```{r}
-
-nums_cp <- prcomp(df_nums_est, scale = TRUE, center = TRUE)
+nums_cp <- prcomp(df_num, scale = TRUE, center = TRUE)
 fviz_eig(nums_cp, ncp = 50)
 fviz_pca_ind(nums_cp,
              col.ind = "cos2", # Color by the quality of representation
@@ -115,6 +126,4 @@ summary(nums_cp)
 # Modelo
 
 ```{r}
-
 ```
-
