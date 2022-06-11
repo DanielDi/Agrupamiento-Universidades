@@ -219,6 +219,52 @@ segments(x0 = npc_opt_ugds, y0 = 0, x1 = npc_opt_ugds,
          y1 = prop_expl_var_ugds[npc_opt_ugds], col = "red", lwd = 2)
 ```
 
+## Proyección de los datos en las componentes
+
+A continuación se representa cada conjunto de datos en sus componentes principales multiplicando por la cantidad óptima de vectore propios de cada conjunto. Estos vectores propios los devuelve el método *princomp*.  
+
+A manera de resumen, se presenta los valores óptimos para cada conjunto de variables:  
+
+* **PCIP**: `r npc_opt_pcip` componentes.  
+* **UGDS**: `r npc_opt_ugds` componentes.  
+
+En las variables PCIP se tienen las siguientes proyecciones:
+```{r, echo=FALSE}
+eigen_pcip <- pcip_cp$loadings[, 1:npc_opt_pcip]
+
+# Valores de PCIP proyectados en las componentes
+df_pcip_proy <- df_pcip%*%eigen_pcip
+colnames(df_pcip_proy) <- paste(colnames(df_pcip_proy), "_PCIP", sep="")
+head(df_pcip_proy)
+```
+
+Similarmente, se tiene para las variables UGDS:
+```{r, echo=FALSE}
+eigen_ugds <- ugds_cp$loadings[, 1:npc_opt_ugds]
+
+# Valores de PCIP proyectados en las componentes
+df_ugds_proy <- df_ugds%*%eigen_ugds
+colnames(df_ugds_proy) <- paste(colnames(df_ugds_proy), "_UGDS", sep="")
+head(df_ugds_proy)
+```
+## Reconstrucción del conjunto de datos
+
+Como se calcularon las componentes para un subconjunto de variables, entonces es necesario unificar estos nuevos valores proyectados con las variables a las cuales no se les calculó componentes. Para esto, se eliminan del conjunto de datos las variables que fueron proyectadas y se añaden sus proyecciones, mientras que las demás variables permanencen iguales.
+
+```{r, echo=FALSE}
+# Elimina las columnas PCIP y UGDS
+df_num_scale_completed <- df_num_scale[,!(colnames(df_num_scale) %in% colnames(df_pcip))]
+df_num_scale_completed <- df_num_scale_completed[,!(colnames(df_num_scale_completed) %in% colnames(df_ugds))]
+
+# Unifica las proyecciones con las variables que se tienen
+df_num_scale_completed <- cbind(df_num_scale_completed, df_pcip_proy)
+df_num_scale_completed <- cbind(df_num_scale_completed, df_ugds_proy)
+
+```
+Estas fueron las variables que quedaron en el conjunto de datos: 
+```{r, echo=FALSE}
+colnames(df_num_scale_completed)
+```
 
 # Modelo
 
