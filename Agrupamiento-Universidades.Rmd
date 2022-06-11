@@ -101,53 +101,86 @@ df_num <- cbind(df_num, df_aux)
 
 ```{r}
 df_num <- rapply(df_num, zoo::na.fill,"numeric",fill="extend",how="replace")
+
+df_num_scale <- scale(df_num, center = TRUE, scale = TRUE)
 ```
 
 La reducción de componentes se hará con variables relacionadas.
 
 ```{r}
-cols_nums <- data.frame(colnames(df_num))
+cols_nums <- data.frame(colnames(df_num_scale))
 
 # Obtiene el rango de columnas llamadas PCIP*
 df_pcip <- cols_nums %>% 
-  filter(str_detect(colnames.df_num., "^PCIP"))
+  filter(str_detect(colnames.df_num_scale., "^PCIP"))
 
-df_pcip <- subset(df_num, select = df_pcip$colnames.df_num.)
+df_pcip <- subset(df_num_scale, select = df_pcip$colnames.df_num_scale.)
 
 # Obtiene el rango de columnas llamadas UGDS*
 df_ugds <- cols_nums %>% 
-  filter(str_detect(colnames.df_num., "^UGDS"))
+  filter(str_detect(colnames.df_num_scale., "^UGDS"))
 
-df_ugds <- subset(df_num, select = df_ugds$colnames.df_num.)
+df_ugds <- subset(df_num_scale, select = df_ugds$colnames.df_num_scale.)
 ```
 
 # Componentes principales
 
 ```{r}
+nums_cp <- princomp(df_num_scale)
 
-ugds_cp <- prcomp(df_ugds, scale = TRUE, center = TRUE)
-summary(ugds_cp)
+plot(nums_cp)
 
-pcip_cp <- prcomp(df_pcip, scale = TRUE, center = TRUE)
-summary(pcip_cp)
+prop_expl_var<-cumsum((nums_cp$sdev)^2)/sum((nums_cp$sdev)^2)
 
-all_cp <- prcomp(df_num, scale = FALSE, center = TRUE)
-summary(all_cp)
+npc_opt<-which.min(abs(prop_expl_var-0.8)) # Así se encuentra el número de componentes principales que explican aproximadamente el 80% de la variabilidad
+
+
+# npc<-20
+plot(prop_expl_var,type="h",las=1,xlim=c(1,38),ylab="Proporción de varianza explicada",xlab="m")
+points(npc_opt,prop_expl_var[npc_opt],col="red",lwd=2)
+segments(x0=0,y0=prop_expl_var[npc_opt],x1=npc_opt,y1=prop_expl_var[npc_opt],col="red",lwd=2)
+segments(x0=npc_opt,y0=0,x1=npc_opt,y1=prop_expl_var[npc_opt],col="red",lwd=2)
+
+
+# pcip_cp <- princomp(df_pcip)
+# 
+# plot(pcip_cp)
+# 
+# prop_expl_var<-cumsum((pcip_cp$sdev)^2)/sum((pcip_cp$sdev)^2)
+# 
+# npc_opt<-which.min(abs(prop_expl_var-0.8)) # Así se encuentra el número de componentes principales que explican aproximadamente el 80% de la variabilidad
+# 
+# 
+# # npc<-20
+# plot(prop_expl_var,type="h",las=1,xlim=c(1,38),ylab="Proporción de varianza explicada",xlab="m")
+# points(npc_opt,prop_expl_var[npc_opt],col="red",lwd=2)
+# segments(x0=0,y0=prop_expl_var[npc_opt],x1=npc_opt,y1=prop_expl_var[npc_opt],col="red",lwd=2)
+# segments(x0=npc_opt,y0=0,x1=npc_opt,y1=prop_expl_var[npc_opt],col="red",lwd=2)
+
+
+# ugds_cp <- prcomp(df_ugds, scale = TRUE, center = TRUE)
+# summary(ugds_cp)
+# 
+# pcip_cp <- prcomp(df_pcip, scale = TRUE, center = TRUE)
+# summary(pcip_cp)
+# 
+# all_cp <- prcomp(df_num, scale = FALSE, center = TRUE)
+# summary(all_cp)
 ```
 
 ```{r}
-eig_ugds <- get_eigenvalue(ugds_cp)
-plot(eig_ugds$cumulative.variance.percent, eig_ugds$eigenvalue)
-
-eig_pcip <- get_eigenvalue(pcip_cp)
-eig_pcip
-fviz_eig(pcip_cp, ncp = 30)
-fviz_pca_var(ugds_cp, col.var="steelblue")
-
-pca_1_2 <- data.frame(all_cp$x[, 17:43])
-
-fviz_pca_var(ugds_cp, col.var="steelblue")
-plot(all_cp$x[,17], all_cp$x[,43])
+# eig_ugds <- get_eigenvalue(ugds_cp)
+# plot(eig_ugds$cumulative.variance.percent, eig_ugds$eigenvalue)
+# 
+# eig_pcip <- get_eigenvalue(pcip_cp)
+# eig_pcip
+# fviz_eig(pcip_cp, ncp = 30)
+# fviz_pca_var(ugds_cp, col.var="steelblue")
+# 
+# pca_1_2 <- data.frame(all_cp$x[, 17:43])
+# 
+# fviz_pca_var(ugds_cp, col.var="steelblue")
+# plot(all_cp$x[,17], all_cp$x[,43])
 ```
 
 # Modelo
