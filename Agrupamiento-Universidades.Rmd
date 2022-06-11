@@ -124,19 +124,30 @@ df_ugds <- subset(df_num, select = df_ugds$colnames.df_num.)
 # Componentes principales
 
 ```{r}
+
 ugds_cp <- prcomp(df_ugds, scale = TRUE, center = TRUE)
 summary(ugds_cp)
 
 pcip_cp <- prcomp(df_pcip, scale = TRUE, center = TRUE)
 summary(pcip_cp)
+
+all_cp <- prcomp(df_num, scale = FALSE, center = TRUE)
+summary(all_cp)
 ```
 
 ```{r}
+eig_ugds <- get_eigenvalue(ugds_cp)
+plot(eig_ugds$cumulative.variance.percent, eig_ugds$eigenvalue)
+
+eig_pcip <- get_eigenvalue(pcip_cp)
+eig_pcip
 fviz_eig(pcip_cp, ncp = 30)
-fviz_pca_ind(nums_cp,
-             col.ind = "cos2", # Color by the quality of representation
-             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-             repel = TRUE     # Avoid text overlapping)
+fviz_pca_var(ugds_cp, col.var="steelblue")
+
+pca_1_2 <- data.frame(all_cp$x[, 17:43])
+
+fviz_pca_var(ugds_cp, col.var="steelblue")
+plot(all_cp$x[,17], all_cp$x[,43])
 ```
 
 # Modelo
