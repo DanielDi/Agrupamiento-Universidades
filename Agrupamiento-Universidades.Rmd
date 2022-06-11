@@ -21,7 +21,7 @@ library(Gifi)
 
 # Lectura de datos
 
-```{r}
+```{r, echo=FALSE}
 datos <- read.csv("datos/CollegeScorecard.csv")
 ```
 
@@ -32,7 +32,7 @@ El conjunto de datos cuentas con 1725 características, sin embargo muchas de el
 Existen variables (INSTNM, NPCURL, INSTURL) con todos los valores, pero no aportan información para el análisis. Estas columnas también fueron eliminadas del conjunto de datos.
 
 
-```{r}
+```{r, echo=FALSE}
 # Reemplazar algunos valores con NA
 df <- replace(datos, datos=="PrivacySuppressed", NA) # revisar: parece que quedan como strings
 df <- replace(df, df==" ", NA)
@@ -56,7 +56,7 @@ df <- subset(df, select = -c(INSTNM, NPCURL, INSTURL, UNITID,
 
 ## Convertir los tipos de datos
 
-```{r}
+```{r, echo=FALSE}
 columnas <- data.frame(colnames(df))
 
 columnas_CIP <- columnas %>% 
@@ -72,7 +72,7 @@ df <- df %>%
 # st_fips se puede borrar y dejar solo region
 ```
 
-```{r}
+```{r, echo=FALSE}
 #Separar df por tipo de columna
 # colSums(is.na(df)/7804)
 
@@ -101,16 +101,24 @@ df_fact <- modify(df_fact, addNA)
 ```
  
 ## Interpolación de los datos faltantes
+Los datos numéricos faltantes se completan realizando una extrapolación de los datos que se tienen en la base datos. Se hacen separado para los datos numéricos y enteros. 
 
-```{r}
+```{r, echo=FALSE}
+# Interpolación para los datos numéricos
 df_num <- rapply(df_num, zoo::na.fill,"numeric",fill="extend",how="replace")
 
+# Interpolacińo para los datos enteros
+df_num <- rapply(df_num, zoo::na.fill,"integer",fill="extend",how="replace")
+
+# Estandarización de los datos
 df_num_scale <- scale(df_num, center = TRUE, scale = TRUE)
 ```
 
-La reducción de componentes se hará con variables relacionadas.
+# Componentes principales
 
-```{r}
+Se decide realizar componentes principales agrupando variables que hacen parte de la misma descripción en el diccionario de datos. En particular, se obtienen las componentes principales de las variables que empiecen por PCIP (de las cuales hay 38) y UGDS (con 10 variables).  
+
+```{r, echo=FALSE}
 cols_nums <- data.frame(colnames(df_num_scale))
 
 # Obtiene el rango de columnas llamadas PCIP*
@@ -126,64 +134,64 @@ df_ugds <- cols_nums %>%
 df_ugds <- subset(df_num_scale, select = df_ugds$colnames.df_num_scale.)
 ```
 
-# Componentes principales
+Las variables PCIP tienen el siguiente resumen de las componentes:  
 
-```{r}
-nums_cp <- princomp(df_num_scale)
+```{r, echo=FALSE}
+# Componentes principales para las variables PCIP*
+pcip_cp <- princomp(df_pcip)
+summary(pcip_cp)
+```
+De lo anterior, se puede observar que las primeras 25 componentes explican, aproximadamente, el 80% de la variabilidad. En el siguiente gráfico se muestra la varianza explicada por la primeras 10 componentes: 
 
-plot(nums_cp)
-
-prop_expl_var<-cumsum((nums_cp$sdev)^2)/sum((nums_cp$sdev)^2)
-
-npc_opt<-which.min(abs(prop_expl_var-0.8)) # Así se encuentra el número de componentes principales que explican aproximadamente el 80% de la variabilidad
-
-
-# npc<-20
-plot(prop_expl_var,type="h",las=1,xlim=c(1,38),ylab="Proporción de varianza explicada",xlab="m")
-points(npc_opt,prop_expl_var[npc_opt],col="red",lwd=2)
-segments(x0=0,y0=prop_expl_var[npc_opt],x1=npc_opt,y1=prop_expl_var[npc_opt],col="red",lwd=2)
-segments(x0=npc_opt,y0=0,x1=npc_opt,y1=prop_expl_var[npc_opt],col="red",lwd=2)
-
-
-# pcip_cp <- princomp(df_pcip)
-# 
-# plot(pcip_cp)
-# 
-# prop_expl_var<-cumsum((pcip_cp$sdev)^2)/sum((pcip_cp$sdev)^2)
-# 
-# npc_opt<-which.min(abs(prop_expl_var-0.8)) # Así se encuentra el número de componentes principales que explican aproximadamente el 80% de la variabilidad
-# 
-# 
-# # npc<-20
-# plot(prop_expl_var,type="h",las=1,xlim=c(1,38),ylab="Proporción de varianza explicada",xlab="m")
-# points(npc_opt,prop_expl_var[npc_opt],col="red",lwd=2)
-# segments(x0=0,y0=prop_expl_var[npc_opt],x1=npc_opt,y1=prop_expl_var[npc_opt],col="red",lwd=2)
-# segments(x0=npc_opt,y0=0,x1=npc_opt,y1=prop_expl_var[npc_opt],col="red",lwd=2)
-
-
-# ugds_cp <- prcomp(df_ugds, scale = TRUE, center = TRUE)
-# summary(ugds_cp)
-# 
-# pcip_cp <- prcomp(df_pcip, scale = TRUE, center = TRUE)
-# summary(pcip_cp)
-# 
-# all_cp <- prcomp(df_num, scale = FALSE, center = TRUE)
-# summary(all_cp)
+```{r, echo=FALSE}
+plot(pcip_cp, main = "Varianza por cada componente")
 ```
 
-```{r}
-# eig_ugds <- get_eigenvalue(ugds_cp)
-# plot(eig_ugds$cumulative.variance.percent, eig_ugds$eigenvalue)
-# 
-# eig_pcip <- get_eigenvalue(pcip_cp)
-# eig_pcip
-# fviz_eig(pcip_cp, ncp = 30)
-# fviz_pca_var(ugds_cp, col.var="steelblue")
-# 
-# pca_1_2 <- data.frame(all_cp$x[, 17:43])
-# 
-# fviz_pca_var(ugds_cp, col.var="steelblue")
-# plot(all_cp$x[,17], all_cp$x[,43])
+Para determinar la cantidad óptima de componentes con base a una explicación de la variabilidad del 80%, se calcula la variabilidad acumulada de las componentes y se obtiene la mínima componente con un 80% aproximado de esta: 
+
+```{r, echo=FALSE}
+# Variabilidda acumulada
+prop_expl_var_pcip <- cumsum((pcip_cp$sdev)^2)/sum((pcip_cp$sdev)^2)
+
+# Número óptimo de componentes con, aproximadamente, un 80% de explicación de la variabilidad
+npc_opt_pcip <- which.min(abs(prop_expl_var_pcip-0.8))
+npc_opt_pcip
+```
+
+Para ver gráficamente lo anterior: 
+
+```{r, echo=FALSE}
+plot(prop_expl_var_pcip,
+     type = "h", las = 1, xlim = c(1,47),
+     ylab = "Proporción de varianza explicada", xlab = "m", 
+     main = "Número óptimo de componentes principales")
+points(npc_opt_pcip, prop_expl_var_pcip[npc_opt_pcip], 
+       col = "red", lwd = 2)
+
+segments(x0 = 0 ,y0 = prop_expl_var_pcip[npc_opt_pcip],
+         x1 = npc_opt_pcip, y1 = prop_expl_var_pcip[npc_opt_pcip],
+         col = "red", lwd = 2)
+segments(x0 = npc_opt_pcip, y0 = 0, x1 = npc_opt_pcip,
+         y1 = prop_expl_var_pcip[npc_opt_pcip], col = "red", lwd = 2)
+```
+
+Análogamente, se hace un análisis de componentes principales para las variables UGDS.  
+
+En el siguiente resumen, se puede determinar que con 7 componentes se alcanza a explicar el 80% de la variabilidad de los datos: 
+```{r, echo=FALSE}
+# Componentes principales para las variables UGDS*
+ugds_cp <- princomp(df_ugds)
+summary(ugds_cp)
+```
+El análisis análitico lo confirma: 
+
+```{r, echo=FALSE}
+# Variabilidda acumulada
+prop_expl_var_ugds <- cumsum((ugds_cp$sdev)^2)/sum((ugds_cp$sdev)^2)
+
+# Número óptimo de componentes con, aproximadamente, un 80% de explicación de la variabilidad
+npc_opt_ugds <- which.min(abs(prop_expl_var_ugds-0.8))
+npc_opt_ugds
 ```
 
 # Componentes principales de los datos categóricos
@@ -194,9 +202,25 @@ segments(x0=npc_opt,y0=0,x1=npc_opt,y1=prop_expl_var[npc_opt],col="red",lwd=2)
 # cols_prin_fact <- princals(df_fact, ndim = 2, ordinal = FALSE, itmax=5)
 
 ```
+Finalmente, se tiene la representación gráfica para lo anterior: 
+
+```{r, echo=FALSE}
+plot(prop_expl_var_ugds,
+     type = "h", las = 1, xlim = c(1,47),
+     ylab = "Proporción de varianza explicada", xlab = "m", 
+     main = "Número óptimo de componentes principales")
+points(npc_opt_ugds, prop_expl_var_ugds[npc_opt_ugds], 
+       col = "red", lwd = 2)
+
+segments(x0 = 0 ,y0 = prop_expl_var_ugds[npc_opt_ugds],
+         x1 = npc_opt_ugds, y1 = prop_expl_var_ugds[npc_opt_ugds],
+         col = "red", lwd = 2)
+segments(x0 = npc_opt_ugds, y0 = 0, x1 = npc_opt_ugds,
+         y1 = prop_expl_var_ugds[npc_opt_ugds], col = "red", lwd = 2)
+```
 
 
 # Modelo
 
-```{r}
+```{r, echo=FALSE}
 ```
