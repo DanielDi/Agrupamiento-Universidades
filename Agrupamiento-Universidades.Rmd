@@ -13,6 +13,9 @@ library(dplyr)
 library(stringr)
 library(factoextra)
 library(zoo)
+library(purrr)
+install.packages("Gifi", repos="http://R-Forge.R-project.org")
+library(Gifi)
 ```
 
 
@@ -82,9 +85,9 @@ index_i <- grep("CURROPER", colnames(df_fact))+1
 index_s <- ncol(df_fact)
 
 df_aux <- df_fact[c(index_i:index_s)]
+df_fact <- df_fact[c(0:(index_i-1))]
 
 df_aux <- mutate_all(df_aux, as.numeric)
-
 
 
 df_num <- df %>% 
@@ -92,9 +95,9 @@ df_num <- df %>%
 
 df_num <- cbind(df_num, df_aux)
 
-#TODO
 # addNA para añadir NA como level del factor.
-# df <- modify(df, addNA)
+df_fact <- modify(df_fact, addNA)
+#rowSums(is.na(df_fact))
 ```
  
 ## Interpolación de los datos faltantes
@@ -182,6 +185,16 @@ segments(x0=npc_opt,y0=0,x1=npc_opt,y1=prop_expl_var[npc_opt],col="red",lwd=2)
 # fviz_pca_var(ugds_cp, col.var="steelblue")
 # plot(all_cp$x[,17], all_cp$x[,43])
 ```
+
+# Componentes principales de los datos categóricos
+
+```{r}
+# Ejemplo: http://www.css.cornell.edu/faculty/dgr2/_static/files/R_html/NonlinearPCA.html
+# pero no termina ... 
+# cols_prin_fact <- princals(df_fact, ndim = 2, ordinal = FALSE, itmax=5)
+
+```
+
 
 # Modelo
 
