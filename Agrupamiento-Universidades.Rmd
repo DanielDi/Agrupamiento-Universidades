@@ -15,6 +15,8 @@ library(factoextra)
 library(zoo)
 library(purrr)
 library(Gifi)
+library(klaR)
+library(clustMixType)
 ```
 
 
@@ -204,7 +206,7 @@ npc_opt_ugds
 ```{r}
 # Ejemplo: http://www.css.cornell.edu/faculty/dgr2/_static/files/R_html/NonlinearPCA.html
 # pero no termina ... 
-# cols_prin_fact <- princals(df_fact, ndim = 2, ordinal = FALSE, itmax=5)
+# cols_prin_fact <- princals(df_fact_nocip, ndim = 2, ordinal = FALSE, itmax=5)
 
 ```
 
@@ -276,6 +278,41 @@ colnames(df_num_scale_completed)
 # Modelo
 
 ```{r, echo=FALSE}
+# Clúster para todos incluido los caracteristicas
+df_final <- cbind(df_num_scale_completed, df_fact_nocip)
+clusters_final <- kproto(df_final, 4, na.rm = FALSE, verbose=FALSE)
+clusters_final$centers
+clprofiles(clusters_final, df_final)
+```
+```{r}
+# Elbow Method for finding the optimal number of clusters
+set.seed(123)
+# Compute and plot wss for k = 2 to k = 15.
+k.max <- 15
+#data <- na.omit(df_final) # to remove the rows with NA's
+wss <- sapply(1:k.max, 
+              function(k){kproto(df_final, k, na.rm = FALSE)$tot.withinss})
+wss
+plot(1:k.max, wss,
+     type="b", pch = 19, frame = FALSE, 
+     xlab="Number of clusters K",
+     ylab="Total within-clusters sum of squares")
+```
+```{r}
+# Elbow Method for finding the optimal number of clusters
+set.seed(123)
+# Compute and plot wss for k = 2 to k = 15.
+k.max <- 25
+#data <- na.omit(df_final) # to remove the rows with NA's
+wss <- sapply(15:k.max, 
+              function(k){kproto(df_final, k, na.rm = FALSE)$tot.withinss})
+wss
+plot(15:k.max, wss,
+     type="b", pch = 19, frame = FALSE, 
+     xlab="Number of clusters K",
+     ylab="Total within-clusters sum of squares")
+```
+```{r, echo=FALSE}
 # Clúster para las UGDS
 fviz_nbclust(ugds_cp$scores, FUNcluster=kmeans)
 eclust(ugds_cp$scores, "kmeans", hc_metric="eucliden",k=2)
@@ -297,6 +334,8 @@ eclust(df_num_no_cp, "kmeans", hc_metric="eucliden",k=2)
 km1<-eclust(df_num_scale_completed, "kmeans", hc_metric="eucliden",k=2)
 
 ```
+
+
 
 # Bibliografía
 
