@@ -214,6 +214,9 @@ plot(1:k.max, wss,
 clusters_final <- kproto(df_final, 4, na.rm = FALSE, verbose=FALSE)
 clprofiles(clusters_final, df_final)
 ```
+```{r}
+kmeans(df_final, 4)
+```
 
 
 
