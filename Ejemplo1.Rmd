@@ -1,0 +1,135 @@
+---
+title: "Example"
+author: "Brayan Ortiz, Juan Peña, Thalea Hesse, Juan Falcon, Daniel Espinal"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+library(readr)
+colleges <- read.csv("datos/CollegeScorecard.csv", na = c("NULL", "PrivacySuppressed"))
+dictionary <- read.csv("datos/CollegeScorecardDataDictionary-09-12-2015.csv")
+```
+
+What is here? How much of this data frame is NA?
+```{r pressure, echo=FALSE}
+dim(colleges)
+```
+
+```{r}
+colleges <- Filter(function(x)!all(is.na(x)), colleges)
+dim(colleges)
+```
+Now, just for a first go at some analysis, let’s pick out some columns that we think are likely to be meaningful.
+```{r}
+library(dplyr)
+college_subset <- colleges %>% 
+    select(OPEID, INSTNM, CITY, STABBR, ZIP, 
+           main, LOCALE, HIGHDEG, CONTROL, CCBASIC, HBCU, WOMENONLY, 
+           ADM_RATE, SAT_AVG, UGDS, PPTUG_EF, TUITIONFEE_IN, AVGFACSAL, 
+           PCTFLOAN, C150_4, DEBT_MDN, DEP_INC_AVG)
+```
+
+
+There are still lots of NA values here, so just to get started here, let’s only keep the schools that have reported values for all of these observations. How many does that give us?
+```{r}
+college_subset <- college_subset[complete.cases(college_subset),]
+dim(college_subset)
+```
+# PCA
+
+```{r}
+college_names <- college_subset$INSTNM
+college_SAT <- college_subset$SAT_AVG
+college_subset <- college_subset[,6:22]
+college_subset <- scale(college_subset)
+college_pca <- prcomp(college_subset)
+```
+
+```{r}
+library(reshape2)
+library(ggplot2)
+melted <- melt(college_pca$rotation[,1:9])
+ggplot(data = melted) +
+    theme(legend.position = "none", axis.text.x = element_blank(), 
+          axis.ticks.x = element_blank()) + 
+    labs(x = "Measurements in College Scorecard data",
+        y = "Relative importance in each principle component",
+        title = "Variables in Principal Component Analysis") +
+    geom_bar(aes(x=Var1, y=value, fill=Var1), stat="identity") +
+    facet_wrap(~Var2)
+```
+
+```{r}
+ggplot(data = melted[melted$Var2 == "PC1",]) +
+    theme(legend.position = "none", 
+          axis.text.x= element_text(angle=45, hjust = 1), 
+          axis.ticks.x = element_blank()) + 
+    labs(x = "Measurements in College Scorecard data",
+         y = "Relative importance in principle component",
+         title = "Variables in PC1") +
+    geom_bar(aes(x=Var1, y=value, fill=Var1), stat="identity")
+```
+
+```{r}
+library(broom)
+library(tidyr)
+set.seed(1234)
+kclusts <- data.frame(k=4:18) %>% 
+    group_by(k) %>% 
+    do(kclust = kmeans(college_subset, .$k))
+```
+
+
+```{r}
+clusters <- kclusts %>% group_by(k) %>% do(tidy(.$kclust[[1]]))
+assignments <- kclusts %>% group_by(k) %>% do(augment(.$kclust[[1]], college_subset))
+clusterings <- kclusts %>% group_by(k) %>% do(glance(.$kclust[[1]]))
+```
+
+
+```{r}
+library(ggfortify)
+ggplot(clusterings, aes(k, tot.withinss)) +
+    geom_line(color = "blue", alpha = 0.5, size = 2) +
+    geom_point(size = 0.8)
+```
+
+```{r}
+library(ggrepel)
+set.seed(1234)
+rownames(college_subset) <- college_names
+autoplot(kmeans(college_subset, 10), data = college_subset, size = 3, alpha = 0.8) + 
+    ggtitle("K-Means Clustering of College Scorecard Data") +
+    theme(legend.position="none") +
+    geom_text_repel(aes(PC1, PC2, 
+                         color = factor(kmeans(college_subset, 10)$cluster), 
+                         label = ifelse(college_SAT > 1475,rownames(college_subset),'')),
+                     segment.color = NA)
+```
+```{r}
+library(ggrepel)
+set.seed(1234)
+rownames(college_subset) <- college_names
+autoplot(kmeans(college_subset, 10), data = college_subset, size = 3, alpha = 0.8) + 
+    ggtitle("K-Means Clustering of College Scorecard Data") +
+    theme(legend.position="none") +
+    geom_text_repel(aes(PC1, PC2, 
+                         color = factor(kmeans(college_subset, 10)$cluster), 
+                         label = ifelse(college_SAT > 1475,rownames(college_subset),'')),
+                     segment.color = NA)
+```
+
+
+
+
+
+
+
+
