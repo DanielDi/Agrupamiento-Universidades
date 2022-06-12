@@ -173,13 +173,21 @@ TODO EXPLICAR LAS COMPONENTES
 ## Reconstrucción del conjunto de datos
 
 Como se calcularon las componentes para un subconjunto de variables, entonces es necesario unificar estos nuevos valores proyectados con las variables a las cuales no se les calculó componentes. Para esto, se eliminan del conjunto de datos las variables que fueron proyectadas y se añaden sus proyecciones, mientras que las demás variables permanencen iguales.
+```{r}
+eigen <- main_pca$loadings[, 1:npc_opt]
+
+# Valores de PCIP proyectados en las componentes
+df_proy <- df_num_scale%*%eigen
+# colnames(df_proy) <- paste(colnames(df_proy), "_PCIP", sep="")
+head(df_proy)
+```
 
 
 # Modelo
 
 ```{r, echo=FALSE}
 # Clúster para todos incluido los caracteristicas
-df_final <- cbind(df_num_scale, df_fact_nocip)
+df_final <- cbind(as.data.frame(df_proy), df_fact_nocip)
 
 clusters_final <- kproto(df_final, 4, na.rm = FALSE, verbose=FALSE)
 clusters_final$centers
@@ -204,7 +212,7 @@ plot(1:k.max, wss,
 ```{r, echo=FALSE}
 # Cluśter de todo el conjunto de datos
 clusters_final <- kproto(df_final, 4, na.rm = FALSE, verbose=FALSE)
-
+clprofiles(clusters_final, df_final)
 ```
 
 
