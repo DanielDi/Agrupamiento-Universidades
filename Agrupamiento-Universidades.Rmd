@@ -80,6 +80,7 @@ df <- df %>% mutate(across(.cols=where(is.character), .fns=as.factor))
 
 df_fact <- df[sapply(df, is.factor)] # Acá quedan variables numéricas (RARO xd)
 
+# Obtiene las numéricas que fueron leídas como categóricas
 index_i <- grep("CURROPER", colnames(df_fact))+1
 index_s <- ncol(df_fact)
 
@@ -88,14 +89,19 @@ df_fact <- df_fact[c(0:(index_i-1))]
 
 df_aux <- mutate_all(df_aux, as.numeric)
 
-
+# Selecciona solo las numéricas
 df_num <- df %>% 
     select_if(is.numeric)
 
+# Une los dos datasets numéricos
 df_num <- cbind(df_num, df_aux)
 
 # addNA para añadir NA como level del factor.
 df_fact <- modify(df_fact, addNA)
+
+# Elimina las variables CIPÖ*
+df_fact_nocip <- df_fact[,!(colnames(df_fact) %in% columnas_CIP$colnames.df.)]
+
 #rowSums(is.na(df_fact))
 ```
  
@@ -201,6 +207,7 @@ npc_opt_ugds
 # cols_prin_fact <- princals(df_fact, ndim = 2, ordinal = FALSE, itmax=5)
 
 ```
+
 Finalmente, se tiene la representación gráfica para lo anterior: 
 
 ```{r, echo=FALSE}
@@ -291,4 +298,8 @@ km1<-eclust(df_num_scale_completed, "kmeans", hc_metric="eucliden",k=2)
 
 ```
 
+# Bibliografía
 
+[1] G. James, *Et all*, *An Introduction to Statistical Learning with  Applications in R*. New York :Springer, 2013. [E-book].  
+[2] Klaudia. Bury, 'Clustering on PCA results', 2021. [Online]. Available: https://rpubs.com/Bury/ClusteringOnPcaResults. [Accessed: 11- Jun- 2022]
+[3] Luke. Hayden, 'Principal Component Analysis in R Tutorial ', 2018. [Online]. Available: https://www.datacamp.com/tutorial/pca-analysis-r. [Accessed: 09- Jun- 2022]
