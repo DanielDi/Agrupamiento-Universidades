@@ -76,6 +76,17 @@ ggplot(data = melted[melted$Var2 == "PC1",]) +
          title = "Variables in PC1") +
     geom_bar(aes(x=Var1, y=value, fill=Var1), stat="identity")
 ```
+```{r}
+ggplot(data = melted[melted$Var2 == "PC2",]) +
+    theme(legend.position = "none", 
+          axis.text.x= element_text(angle=45, hjust = 1), 
+          axis.ticks.x = element_blank()) + 
+    labs(x = "Measurements in College Scorecard data",
+         y = "Relative importance in principle component",
+         title = "Variables in PC2") +
+    geom_bar(aes(x=Var1, y=value, fill=Var1), stat="identity")
+```
+
 
 ```{r}
 library(broom)
@@ -105,11 +116,11 @@ ggplot(clusterings, aes(k, tot.withinss)) +
 library(ggrepel)
 set.seed(1234)
 rownames(college_subset) <- college_names
-autoplot(kmeans(college_subset, 10), data = college_subset, size = 3, alpha = 0.8) + 
+autoplot(kmeans(college_subset, 9), data = college_subset, size = 3, alpha = 0.8) + 
     ggtitle("K-Means Clustering of College Scorecard Data") +
     theme(legend.position="none") +
     geom_text_repel(aes(PC1, PC2, 
-                         color = factor(kmeans(college_subset, 10)$cluster), 
+                         color = factor(kmeans(college_subset, 9)$cluster), 
                          label = ifelse(college_SAT > 1475,rownames(college_subset),'')),
                      segment.color = NA)
 ```
@@ -117,11 +128,11 @@ autoplot(kmeans(college_subset, 10), data = college_subset, size = 3, alpha = 0.
 library(ggrepel)
 set.seed(1234)
 rownames(college_subset) <- college_names
-autoplot(kmeans(college_subset, 10), data = college_subset, size = 3, alpha = 0.8) + 
+autoplot(kmeans(college_subset, 9), data = college_subset, size = 3, alpha = 0.8) + 
     ggtitle("K-Means Clustering of College Scorecard Data") +
     theme(legend.position="none") +
     geom_text_repel(aes(PC1, PC2, 
-                         color = factor(kmeans(college_subset, 10)$cluster), 
+                         color = factor(kmeans(college_subset, 9)$cluster), 
                          label = ifelse(college_SAT > 1475,rownames(college_subset),'')),
                      segment.color = NA)
 ```
