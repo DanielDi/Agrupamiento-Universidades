@@ -42,11 +42,11 @@ df <- replace(df, df=="", NA)
 # Se borran columnas con valores nulos (>20%)
 df <- df[,-which(colMeans(is.na(df)) >= 0.2)]
 
-# Se borran filas con valores nulos
-# delete.na <- function(df, n=0) {
-#  df[rowSums(is.na(df)) <= n,]
-# }
-# df <- delete.na(df)
+# # Se borran filas con valores nulos
+delete.na <- function(df, n=0) {
+ df[rowSums(is.na(df)) <= n,]
+}
+df <- delete.na(df)
 
 # Eliminar columnas manualmente
 df <- subset(df, select = -c(INSTNM, NPCURL, INSTURL, UNITID, 
@@ -122,8 +122,17 @@ df_num <- rapply(df_num, zoo::na.fill,"numeric",fill="extend",how="replace")
 # Interpolacińo para los datos enteros
 df_num <- rapply(df_num, zoo::na.fill,"integer",fill="extend",how="replace")
 
+# Reemplazar nan con la media
+# for(i in 1:ncol(df_num)){
+#   df_num[is.na(df_num[,i]), i] <- mean(df_num[,i], na.rm = TRUE)
+# }
+
 # Estandarización de los datos
-df_num_scale <- scale(df_num, center = TRUE, scale = TRUE)
+# df_num_scale <- scale(df_num, center = TRUE, scale = TRUE)
+
+maxs <- apply(df_num, 2, max)
+mins <- apply(df_num, 2, min)
+df_num_scale <- scale(df_num, center = mins, scale = maxs - mins)
 ```
 
 # Componentes principales
