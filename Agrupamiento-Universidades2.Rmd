@@ -59,6 +59,7 @@ df <- subset(df, select = -c(LATITUDE, LONGITUDE, ZIP, STABBR, st_fips, HBCU,
                              PBI, ANNHI, TRIBAL, AANAPII, HSI, NANTI, MENONLY, 
                              WOMENONLY))
 
+df$LOCALE <- substr(df$LOCALE,1,1)
 
 # Algunas variables, a pesar de ser numéricas, tienen muy poca variabilidad: poolyrs
 ```
