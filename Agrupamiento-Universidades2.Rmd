@@ -116,11 +116,11 @@ df_fact_nocip <- df_fact[,!(colnames(df_fact) %in% columnas_CIP$colnames.df.)]
 Los datos numéricos faltantes se completan realizando una extrapolación de los datos que se tienen en la base datos. Se hacen separado para los datos numéricos y enteros. 
 
 ```{r, echo=FALSE}
-# Interpolación para los datos numéricos
-df_num <- rapply(df_num, zoo::na.fill,"numeric",fill="extend",how="replace")
-
-# Interpolacińo para los datos enteros
-df_num <- rapply(df_num, zoo::na.fill,"integer",fill="extend",how="replace")
+# # Interpolación para los datos numéricos
+# df_num <- rapply(df_num, zoo::na.fill,"numeric",fill="extend",how="replace")
+# 
+# # Interpolacińo para los datos enteros
+# df_num <- rapply(df_num, zoo::na.fill,"integer",fill="extend",how="replace")
 
 # Reemplazar nan con la media
 # for(i in 1:ncol(df_num)){
@@ -196,12 +196,18 @@ head(df_proy)
 
 ```{r, echo=FALSE}
 # Clúster para todos incluido los caracteristicas
+set.seed(220612)
 df_final <- cbind(as.data.frame(df_proy), df_fact_nocip)
 
-clusters_final <- kproto(df_final, 4, na.rm = FALSE, verbose=FALSE)
+clusters_final <- kproto(df_final, 5, na.rm = FALSE, verbose=FALSE)
 clusters_final$centers
 clprofiles(clusters_final, df_final)
 ```
+```{r}
+df_final$clus <- as.factor(clusters_final$cluster)
+plot(df_final$Comp.1, df_final$Comp., col=df_final$clus)
+```
+
 ```{r}
 # Elbow Method for finding the optimal number of clusters
 set.seed(123)
