@@ -1,3 +1,4 @@
+
 ---
 title: "Agrupamiento-Universidades"
 author: "Brayan Ortiz, Juan Peña, Thalea Hesse, Juan Sebastian Falcon, Daniel Espinal"
@@ -227,14 +228,6 @@ plot(1:k.max, wss,
 ```
 
 
-```{r, echo=FALSE}
-# Cluśter de todo el conjunto de datos
-clusters_final <- kproto(df_final, 4, na.rm = FALSE, verbose=FALSE)
-clprofiles(clusters_final, df_final)
-```
-```{r}
-kmeans(df_final, 4)
-```
 
 ```{r}
 #Importancia de cada variable por componente
@@ -293,7 +286,16 @@ ggplot(data = melted_sort3[melted_sort3$Var2 == "Comp.3",]) +
 
 
 ```
+# Reconstrucción de representantes principales de los clusters
+```{r}
+centers <- clusters_final$centers[0:npc_opt]
+mu = colMeans(df_num)
+# calculamos los variables originales de los centes para cada cluster
+center_recon = as.matrix(centers[,1:npc_opt]) %*% t(main_pca$loadings[, 1:npc_opt])
+center_recon = scale(center_recon, center = -mu, scale = FALSE)
 
+cbind(center_recon, clusters_final$centers[(npc_opt+1):28])
+```
 
 
 
