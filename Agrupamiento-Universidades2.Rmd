@@ -1,6 +1,6 @@
 ---
 title: "Agrupamiento-Universidades"
-author: "Brayan Ortiz, Juan Peña, Thalea Hesse, Juan Falcon, Daniel Espinal"
+author: "Brayan Ortiz, Juan Peña, Thalea Hesse, Juan Sebastian Falcon, Daniel Espinal"
 date: "`r Sys.Date()`"
 output: html_document
 ---
@@ -17,6 +17,8 @@ library(purrr)
 library(Gifi)
 library(klaR)
 library(clustMixType)
+library(reshape2)
+library(ggplot2)
 ```
 
 
@@ -232,6 +234,65 @@ clprofiles(clusters_final, df_final)
 ```{r}
 kmeans(df_final, 4)
 ```
+
+```{r}
+#Importancia de cada variable por componente
+melted <- melt(main_pca$loadings[,1:9])
+ggplot(data = melted) +
+  theme(legend.position = "none", axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank()) + 
+  labs(x = "Measurements in College Scorecard data",
+       y = "Relative importance in each principle component",
+       title = "Variables in Principal Component Analysis") +
+  geom_bar(aes(x=Var1, y=value, fill=Var1), stat="identity") +
+  facet_wrap(~Var2)
+
+melted$value_abs<-abs(melted$value)
+melted_sort <- melted[order(melted$value_abs,decreasing = T),]
+
+
+#Individualmente para ver cada variable
+
+#Componente1
+melted_sort1<-melted_sort %>%  filter(Var2=="Comp.1") %>% head(10)
+
+ggplot(data = melted_sort1[melted_sort1$Var2 == "Comp.1",]) +
+  theme(legend.position = "none", 
+        axis.text.x= element_text(angle=45, hjust = 1), 
+        axis.ticks.x = element_blank()) + 
+  labs(x = "Variables ",
+       y = "Relative importance in principle component",
+       title = "Variables in PC1") +
+  geom_bar(aes(x=reorder(Var1,-value_abs), y=value_abs, fill=Var1), stat="identity")
+
+
+#Componente 2
+melted_sort2<-melted_sort %>% filter(Var2=="Comp.2") %>% head(10)
+
+ggplot(data = melted_sort2[melted_sort2$Var2 == "Comp.2",]) +
+  theme(legend.position = "none", 
+        axis.text.x= element_text(angle=45, hjust = 1), 
+        axis.ticks.x = element_blank()) + 
+  labs(x = "Variables ",
+       y = "Relative importance in principle component",
+       title = "Variables in PC2") +
+  geom_bar(aes(x=reorder(Var1,-value_abs), y=value_abs, fill=Var1), stat="identity")
+
+#Componente 3
+melted_sort3<-melted_sort %>% filter(Var2=="Comp.3") %>% head(10)
+
+ggplot(data = melted_sort3[melted_sort3$Var2 == "Comp.3",]) +
+  theme(legend.position = "none", 
+        axis.text.x= element_text(angle=45, hjust = 1), 
+        axis.ticks.x = element_blank()) + 
+  labs(x = "Variables ",
+       y = "Relative importance in principle component",
+       title = "Variables in PC3") +
+  geom_bar(aes(x=reorder(Var1,-value_abs), y=value_abs, fill=Var1), stat="identity")
+
+
+```
+
 
 
 
