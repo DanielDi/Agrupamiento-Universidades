@@ -30,7 +30,7 @@ Now, just for a first go at some analysis, let’s pick out some columns that we
 ```{r}
 library(dplyr)
 college_subset <- colleges %>% 
-    select(OPEID, INSTNM, CITY, STABBR, ZIP, 
+    dplyr::select(OPEID, INSTNM, CITY, STABBR, ZIP, 
            main, LOCALE, HIGHDEG, CONTROL, CCBASIC, HBCU, WOMENONLY, 
            ADM_RATE, SAT_AVG, UGDS, PPTUG_EF, TUITIONFEE_IN, AVGFACSAL, 
            PCTFLOAN, C150_4, DEBT_MDN, DEP_INC_AVG)

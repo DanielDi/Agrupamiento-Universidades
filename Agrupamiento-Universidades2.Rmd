@@ -314,7 +314,18 @@ center_recon = scale(center_recon, center = -mu, scale = FALSE)
 
 cbind(center_recon, clusters_final$centers[(npc_opt+1):28])
 ```
+# Agrupación de universidades en Colombia
 
+El Sistema Nacional de Información de la Educación Superior (SNIES) se encarga de compilar y estructurar diferentes datos referentes a las diferentes instituciones de educación superior del país (IES) [4]. El objetivo de este sistema es generar información que permita orientar a las IES en la toma de decisiones que permitan mejorar la calidad del sistema educativo y generar también indicadores que permitan evaluarlas. 
+
+En las bases consolidadas del SNIES se pueden encontrar datos que permitan generar algún tipo de agrupamiento como el desarrollado en el presente documento, datos como:
+
+- Estudiantes inscritos, admitidos, matriculados y graduados: Entre estos datos se encuentra información sobre la localidad y modalidad de la universidad y detalles sobre programa acádemico, distinguiendo la cantidad de hombres y mujeres por cada semestre desde el año 2013.
+- Recuento de docentes que ejercieron cada semestre en las ies, ditinguiendo entre: sexo, formación, tiempo de dedicación y tipo de vínculación. 
+
+En las consultas públicas se puede encontrar una base de datos con información sobre todas las ies oficiales del país con su localidad, sector, acreditacón y convenios, y de sus programas académicos se tiene el nivel, la modalidad y el reconocimiento del ministerio. [5]
+
+Con estos datos se pueden generar algunos datos relevantes similares a los que se encontraron en el presente documento, como por ejemplo, tasas de admision, localidad, modalidad, campus principal, acreditación, nivel más alto, entre otros. También hay otros datos relevantes que no se han encontrado o no son de dominio público, por ejemplo, los créditos y becas otorgados a estudiantes, precio del programa y alumnos distinguiendo por etnia o condiciones físicas o mentales. Algunos de estos datos pueden ser encontrados en las encuestas de calidad de vida del DANE, pero es posible que no se tenga información de la ies asociada al encuestado. 
 
 
 # Bibliografía
@@ -322,3 +333,5 @@ cbind(center_recon, clusters_final$centers[(npc_opt+1):28])
 [1] G. James, *Et all*, *An Introduction to Statistical Learning with  Applications in R*. New York :Springer, 2013. [E-book].  
 [2] Klaudia. Bury, 'Clustering on PCA results', 2021. [Online]. Available: https://rpubs.com/Bury/ClusteringOnPcaResults. [Accessed: 11- Jun- 2022]
 [3] Luke. Hayden, 'Principal Component Analysis in R Tutorial ', 2018. [Online]. Available: https://www.datacamp.com/tutorial/pca-analysis-r. [Accessed: 09- Jun- 2022]
+[4] Qué es el SNIES. Snies.mineducacion.gov.co. (2022). Retrieved 14 June 2022, from https://snies.mineducacion.gov.co/portal/EL-SNIES/Que-es-el-SNIES/.
+[5] Información Poblacional - SNIES. Hecaa.mineducacion.gov.co. (2022). Retrieved 14 June 2022, from https://hecaa.mineducacion.gov.co/consultaspublicas/ies.
