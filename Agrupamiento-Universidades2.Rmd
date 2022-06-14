@@ -157,7 +157,7 @@ Lo cual confirma lo que se mostró anterior. Para ver gráficamente lo anterior:
 ```{r, echo=FALSE,fig.cap = "Figura 1: Numero de CP que explican el 80% de variabilidad"}
 plot(prop_expl_var,
      type = "h", las = 1, xlim = c(1,90),
-     ylab = "Proporción de varianza explicada", xlab = "m", 
+     ylab = "Proporción de varianza explicada", xlab = "Numero Componentes", 
      main = "Número óptimo de componentes principales")
 points(npc_opt, prop_expl_var[npc_opt],
        col = "red", lwd = 2)
@@ -172,7 +172,7 @@ segments(x0 = npc_opt, y0 = 0, x1 = npc_opt,
 Como resumen de las componentes, el siguiente gráfico muestra la varianza explicada por la primeras 10 componentes: 
 
 ```{r, echo=FALSE, fig.cap = "Figura 2: Grafico de la varianza por CP"}
-b<-plot(main_pca, main = "Varianza por cada componente",xlab="Componentes Principales", col="aquamarine",las = 2, cex.names = 0.7)
+plot(main_pca, main = "Varianza por cada componente",xlab="Componentes Principales", col="aquamarine",las = 2, cex.names = 0.7)
 ```
 
 ## Reconstrucción del conjunto de datos
@@ -195,15 +195,15 @@ head(df_proy)
 ```
 
 
-```{r}
-pairs(df_proy[,1:5])
+```{r, fig.cap= "Figura 3: Grafico de dispersion de las 5 CP"}
+pairs(df_proy[,1:5], main="Graficos de Dispersion CP")
 ```
 
 # Agrupamiento de los datos
 
 Se determina la cantidad óptima de clúster probando con diferentes valores de K y se evalúan con el Método de Codo (el cual calcula la suma del cuadrado de los errores para cada clúster). Para esto se hace uso del método *kproto*. 
 
-```{r}
+```{r, fig.cap="Figura 4: Grafica de Codo para k optimo"}
 # Elbow Method for finding the optimal number of clusters
 set.seed(130622)
 
@@ -227,14 +227,16 @@ clusters_final <- kproto(df_final, k_opt, na.rm = FALSE, verbose=FALSE)
 ```
 
 Teniendo el agrupamiento, se proyectan las componentes 1 y 2 en este para observar cómo se distribuyen. Este es el resultado:
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.cap= "Figura 5: Comp 1 vs Copm 2 discriminado por su respectivo cluster"}
 df_final$clus <- as.factor(clusters_final$cluster)
-plot(df_final$Comp.1, df_final$Comp.2, col=df_final$clus)
+plot(df_final$Comp.1, df_final$Comp.2, col=df_final$clus, xlab="Componente Principal 1", ylab="Componente Principal 2", main = "Componente 1 vs Componente 2", pch = c(15, 16, 17, 18, 19)[as.numeric(df_final$clus)])
+#legend("topleft", legend=c("1", "2","3","4"),title="Clusters", col=df_final$clus)
+legend("topleft", legend = paste("Cluster", 1:4), pch=c(15, 16, 17, 18, 19), col=1:4)
 ```
 
 Adicionalmente, se puede calcular la importancia de cada variable en las componentes. Esto ayuda para la elección de los representantes de cada clúster.
 
-```{r}
+```{r,echo=FALSE}
 #Importancia de cada variable por componente
 melted <- melt(main_pca$loadings[,1:9])
 ggplot(data = melted) +
