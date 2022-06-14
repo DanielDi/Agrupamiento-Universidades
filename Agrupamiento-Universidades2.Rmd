@@ -154,7 +154,7 @@ npc_opt
 ```
 Lo cual confirma lo que se mostró anterior. Para ver gráficamente lo anterior: 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE,fig.cap = "Figura 1: Numero de CP que explican el 80% de variabilidad"}
 plot(prop_expl_var,
      type = "h", las = 1, xlim = c(1,90),
      ylab = "Proporción de varianza explicada", xlab = "m", 
@@ -171,8 +171,8 @@ segments(x0 = npc_opt, y0 = 0, x1 = npc_opt,
 
 Como resumen de las componentes, el siguiente gráfico muestra la varianza explicada por la primeras 10 componentes: 
 
-```{r, echo=FALSE}
-plot(main_pca, main = "Varianza por cada componente")
+```{r, echo=FALSE, fig.cap = "Figura 2: Grafico de la varianza por CP"}
+b<-plot(main_pca, main = "Varianza por cada componente",xlab="Componentes Principales", col="aquamarine",las = 2, cex.names = 0.7)
 ```
 
 ## Reconstrucción del conjunto de datos
@@ -314,6 +314,14 @@ center_recon = scale(center_recon, center = -mu, scale = FALSE)
 
 cbind(center_recon, clusters_final$centers[(npc_opt+1):28])
 ```
+
+
+```{r}
+
+
+```
+
+
 # Agrupación de universidades en Colombia
 
 El Sistema Nacional de Información de la Educación Superior (SNIES) se encarga de compilar y estructurar diferentes datos referentes a las diferentes instituciones de educación superior del país (IES) [4]. El objetivo de este sistema es generar información que permita orientar a las IES en la toma de decisiones que permitan mejorar la calidad del sistema educativo y generar también indicadores que permitan evaluarlas. 
