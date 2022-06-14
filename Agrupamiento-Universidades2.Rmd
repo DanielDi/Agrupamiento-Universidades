@@ -33,7 +33,7 @@ datos <- read.csv("datos/CollegeScorecard.csv")
 
 El conjunto de datos cuentas con 1725 características, sin embargo muchas de ellas no contienen información. Por esta razón se deciden eliminar las característica que tengan más del 20% en valores NaN. Por otra parte, el conjunto de datos contiene diferentes formas para representar los valores vacíos, por ejemplo cadenas de texto vacías o con espacios y, adicionalmente, hay registros con valores en *PrivacySuppressed*. Todos estos valores se recopilaron y se replazaron por el objeto NA de R.  
 
-Existen variables (INSTNM, NPCURL, INSTURL) con todos los valores, pero no aportan información para el análisis. Estas columnas también fueron eliminadas del conjunto de datos.
+Existen variables (INSTNM, NPCURL, INSTURL) con todos los valores, pero no aportan información para el análisis. Estas columnas también fueron eliminadas del conjunto de datos. La variable LOCALE tiene categorías y sub-categorías, por lo cual se decide que no son necesarias ya que con las categorías es suficiente para describir lo que se quiere. Finalmente, se eliminaron variables redudantes del conjunto de datos, por ejemplo, LONGITUDE, LATITUDE, ZIP, entre otras. 
 
 
 ```{r, echo=FALSE}
@@ -54,8 +54,7 @@ df <- delete.na(df)
 # Eliminar columnas manualmente
 df <- subset(df, select = -c(INSTNM, NPCURL, INSTURL, UNITID, 
                              OPEID, opeid6))
-
-# TODO EXPLICAR PORQUE SACAMOS LAS SGTES
+# Eliminar redundancia
 df <- subset(df, select = -c(LATITUDE, LONGITUDE, ZIP, STABBR, st_fips, HBCU, 
                              PBI, ANNHI, TRIBAL, AANAPII, HSI, NANTI, MENONLY, 
                              WOMENONLY))
@@ -66,6 +65,8 @@ df$LOCALE <- substr(df$LOCALE,1,1)
 ```
 
 ## Convertir los tipos de datos
+
+Se estandarizan todas las variables categóricas a un mismo tipo de dato: factor. Además, se observa que en gran medida las variables categóricas están dadas por las CIP*, por lo que se decide tenerlas en otro dataframe.  
 
 ```{r, echo=FALSE}
 columnas <- data.frame(colnames(df))
@@ -82,9 +83,9 @@ df <- df %>%
 # st_fips se puede borrar y dejar solo region
 ```
 
+Por otra parte, se divide el conjunto de datos en variables númericas y categóricas con el fin de facilitar el procesamiento de las componentes principales. Sin embargo, en el conjunto de datos categórico quedaron varias variables numéricas, así que se obtuvo el índice de la última categórica y se extrajeron desde ese índice hasta el final las otra numéricas. Esto luego se unió con el conjunto total de variables numéricas. Las variables CIP* obtenidas previamente se eliminan ya que estas no representan una información fácil de interpretar para cada universidad. 
+
 ```{r, echo=FALSE}
-#Separar df por tipo de columna
-# colSums(is.na(df)/7804)
 
 #Convertir todos los chr a factor
 df <- df %>% mutate(across(.cols=where(is.character), .fns=as.factor))
@@ -98,6 +99,7 @@ index_s <- ncol(df_fact)
 df_aux <- df_fact[c(index_i:index_s)]
 df_fact <- df_fact[c(0:(index_i-1))]
 
+# en df_aux están las variable numéricas que estaban en df_fact
 df_aux <- mutate_all(df_aux, as.numeric)
 
 # Selecciona solo las numéricas
@@ -107,9 +109,6 @@ df_num <- df %>%
 # Une los dos datasets numéricos
 df_num <- cbind(df_num, df_aux)
 
-# addNA para añadir NA como level del factor.
-df_fact <- modify(df_fact, addNA)
-
 # Elimina las variables CIPÖ*
 df_fact_nocip <- df_fact[,!(colnames(df_fact) %in% columnas_CIP$colnames.df.)]
 
@@ -117,54 +116,43 @@ df_fact_nocip <- df_fact[,!(colnames(df_fact) %in% columnas_CIP$colnames.df.)]
 ```
  
 ## Interpolación de los datos faltantes
-Los datos numéricos faltantes se completan realizando una extrapolación de los datos que se tienen en la base datos. Se hacen separado para los datos numéricos y enteros. 
+
+Los datos numéricos faltantes se completan realizando una extrapolación de los datos que se tienen en la base datos. Se hacen separado para los datos numéricos y enteros. También los datos numéricos se normalizaron con el método Min-Max para dejar los registros en un rango de 0-1.
 
 ```{r, echo=FALSE}
-# # Interpolación para los datos numéricos
-# df_num <- rapply(df_num, zoo::na.fill,"numeric",fill="extend",how="replace")
-# 
-# # Interpolacińo para los datos enteros
-# df_num <- rapply(df_num, zoo::na.fill,"integer",fill="extend",how="replace")
+# Interpolación para los datos numéricos
+df_num <- rapply(df_num, zoo::na.fill,"numeric",fill="extend",how="replace")
 
-# Reemplazar nan con la media
-# for(i in 1:ncol(df_num)){
-#   df_num[is.na(df_num[,i]), i] <- mean(df_num[,i], na.rm = TRUE)
-# }
+# Interpolacińo para los datos enteros
+df_num <- rapply(df_num, zoo::na.fill,"integer",fill="extend",how="replace")
 
-# Estandarización de los datos
-# df_num_scale <- scale(df_num, center = TRUE, scale = TRUE)
+# Estandarización de los datos con Min-Max
 
 maxs <- apply(df_num, 2, max)
 mins <- apply(df_num, 2, min)
+
 df_num_scale <- scale(df_num, center = mins, scale = maxs - mins)
 ```
 
 # Componentes principales
 
-Las variables PCIP tienen el siguiente resumen de las componentes:  
+Con los datos numéricos extrapolados y estandarizados se hace un análisis de las componente principales. A continuación se presenta este resumen:
 
 ```{r, echo=FALSE}
 main_pca <- princomp(df_num_scale)
 summary(main_pca)
 ```
-De lo anterior, se puede observar que las primeras 2 componentes explican, aproximadamente, el 80% de la variabilidad. En el siguiente gráfico se muestra la varianza explicada por la primeras 10 componentes: 
+De lo anterior, se puede observar que las primeras 17 componentes explican, aproximadamente, el 80% de la variabilidad. Para confirmar esto analíticamente, se calcula la variabilidad acumulada de las componentes y se obtiene la mínima componente con un 80% aproximado de esta: 
 
 ```{r, echo=FALSE}
-plot(main_pca, main = "Varianza por cada componente")
-```
-
-Para determinar la cantidad óptima de componentes con base a una explicación de la variabilidad del 80%, se calcula la variabilidad acumulada de las componentes y se obtiene la mínima componente con un 80% aproximado de esta: 
-
-```{r, echo=FALSE}
-# Variabilidda acumulada
+# Variabilidad acumulada
 prop_expl_var <- cumsum((main_pca$sdev)^2)/sum((main_pca$sdev)^2)
 
 # Número óptimo de componentes con, aproximadamente, un 80% de explicación de la variabilidad
 npc_opt <- which.min(abs(prop_expl_var-0.8))
 npc_opt
 ```
-
-Para ver gráficamente lo anterior: 
+Lo cual confirma lo que se mostró anterior. Para ver gráficamente lo anterior: 
 
 ```{r, echo=FALSE}
 plot(prop_expl_var,
@@ -181,53 +169,70 @@ segments(x0 = npc_opt, y0 = 0, x1 = npc_opt,
          y1 = prop_expl_var[npc_opt], col = "red", lwd = 2)
 ```
 
-TODO EXPLICAR LAS COMPONENTES
+Como resumen de las componentes, el siguiente gráfico muestra la varianza explicada por la primeras 10 componentes: 
+
+```{r, echo=FALSE}
+plot(main_pca, main = "Varianza por cada componente")
+```
 
 ## Reconstrucción del conjunto de datos
 
-Como se calcularon las componentes para un subconjunto de variables, entonces es necesario unificar estos nuevos valores proyectados con las variables a las cuales no se les calculó componentes. Para esto, se eliminan del conjunto de datos las variables que fueron proyectadas y se añaden sus proyecciones, mientras que las demás variables permanencen iguales.
+Se necesita tener la proyección del conjunto de datos sobre las componentes principales óptimas, para luego unirlo con el conjunto categórico. Esta proyección se realiza obteniendo los vectores propios de estas componentes, y aplicando un producto de matrices entre estos vectores y el conjunto de datos numéricos. Finalmente, se une este nuevo conjunto de datos con el categórico. 
+
 ```{r}
+# Vectores propios
 eigen <- main_pca$loadings[, 1:npc_opt]
 
-# Valores de PCIP proyectados en las componentes
+# Valores proyectados en las componentes
 df_proy <- df_num_scale%*%eigen
-# colnames(df_proy) <- paste(colnames(df_proy), "_PCIP", sep="")
+
+# Unión de la proyección con el conjunto categórico.
+df_final <- cbind(as.data.frame(df_proy), df_fact_nocip)
+df_final <- delete.na(df_final)
+
+
 head(df_proy)
 ```
 
 
-# Modelo
-
-```{r, echo=FALSE}
-# Clúster para todos incluido los caracteristicas
-set.seed(220612)
-df_final <- cbind(as.data.frame(df_proy), df_fact_nocip)
-
-clusters_final <- kproto(df_final, 5, na.rm = FALSE, verbose=FALSE)
-clusters_final$centers
-clprofiles(clusters_final, df_final)
-```
 ```{r}
-df_final$clus <- as.factor(clusters_final$cluster)
-plot(df_final$Comp.1, df_final$Comp., col=df_final$clus)
+pairs(df_proy[,1:5])
 ```
+
+# Agrupamiento de los datos
+
+Se determina la cantidad óptima de clúster probando con diferentes valores de K y se evalúan con el Método de Codo (el cual calcula la suma del cuadrado de los errores para cada clúster). Para esto se hace uso del método *kproto*. 
 
 ```{r}
 # Elbow Method for finding the optimal number of clusters
-set.seed(123)
+set.seed(130622)
+
 # Compute and plot wss for k = 2 to k = 15.
 k.max <- 15
-#data <- na.omit(df_final) # to remove the rows with NA's
+
 wss <- sapply(1:k.max, 
               function(k){kproto(df_final, k, na.rm = FALSE)$tot.withinss})
-wss
 plot(1:k.max, wss,
      type="b", pch = 19, frame = FALSE, 
      xlab="Number of clusters K",
      ylab="Total within-clusters sum of squares")
 ```
 
+Para la selección óptima de clústers se escogen dos K y, de la gráfica anterior, se compara cuál de estos da la mayor inclinación. En particular, se eligen 4 clústers ya que este es el que mejor muestra tal comportamiento. Luego, con este K óptimo, se construye el modelo de agrupamiento con el método KProto debido a que este permite el tratamiento de datos categóricos y numéricos a la vez. 
 
+```{r, echo=FALSE}
+# Clúster para todos incluido los caracteristica
+k_opt <- 4
+clusters_final <- kproto(df_final, k_opt, na.rm = FALSE, verbose=FALSE)
+```
+
+Teniendo el agrupamiento, se proyectan las componentes 1 y 2 en este para observar cómo se distribuyen. Este es el resultado:
+```{r, echo=FALSE}
+df_final$clus <- as.factor(clusters_final$cluster)
+plot(df_final$Comp.1, df_final$Comp.2, col=df_final$clus)
+```
+
+Adicionalmente, se puede calcular la importancia de cada variable en las componentes. Esto ayuda para la elección de los representantes de cada clúster.
 
 ```{r}
 #Importancia de cada variable por componente
@@ -245,7 +250,7 @@ melted$value_abs<-abs(melted$value)
 melted_sort <- melted[order(melted$value_abs,decreasing = T),]
 
 
-#Individualmente para ver cada variable
+# Individualmente para ver cada variable
 
 #Componente1
 melted_sort1<-melted_sort %>%  filter(Var2=="Comp.1") %>% head(10)
@@ -284,13 +289,26 @@ ggplot(data = melted_sort3[melted_sort3$Var2 == "Comp.3",]) +
        title = "Variables in PC3") +
   geom_bar(aes(x=reorder(Var1,-value_abs), y=value_abs, fill=Var1), stat="identity")
 
+#Componente 4
+melted_sort4<-melted_sort %>% filter(Var2=="Comp.9") %>% head(10)
+
+ggplot(data = melted_sort4[melted_sort4$Var2 == "Comp.9",]) +
+  theme(legend.position = "none", 
+        axis.text.x= element_text(angle=45, hjust = 1), 
+        axis.ticks.x = element_blank()) + 
+  labs(x = "Variables ",
+       y = "Relative importance in principle component",
+       title = "Variables in PC9") +
+  geom_bar(aes(x=reorder(Var1,-value_abs), y=value_abs, fill=Var1), stat="identity")
 
 ```
+
 # Reconstrucción de representantes principales de los clusters
 ```{r}
 centers <- clusters_final$centers[0:npc_opt]
 mu = colMeans(df_num)
-# calculamos los variables originales de los centes para cada cluster
+
+# calculamos los variables originales de los centros para cada cluster
 center_recon = as.matrix(centers[,1:npc_opt]) %*% t(main_pca$loadings[, 1:npc_opt])
 center_recon = scale(center_recon, center = -mu, scale = FALSE)
 
