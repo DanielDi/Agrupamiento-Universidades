@@ -224,6 +224,7 @@ Para la selección óptima de clústers se escogen dos K y, de la gráfica anter
 # Clúster para todos incluido los caracteristica
 k_opt <- 4
 clusters_final <- kproto(df_final, k_opt, na.rm = FALSE, verbose=FALSE)
+
 ```
 
 Teniendo el agrupamiento, se proyectan las componentes 1 y 2 en este para observar cómo se distribuyen. Este es el resultado:
@@ -232,27 +233,30 @@ df_final$clus <- as.factor(clusters_final$cluster)
 plot(df_final$Comp.1, df_final$Comp.2, col=df_final$clus)
 ```
 
-Adicionalmente, se puede calcular la importancia de cada variable en las componentes. Esto ayuda para la elección de los representantes de cada clúster.
+Adicionalmente, se puede calcular la importancia de cada variable en las componentes. Esto ayuda para la elección de los representantes de cada clúster. Esto se lleva todas las componentes y se hace uso del método *melt*:  
+
+```{r, include=TRUE, cache=FALSE}
+# Importancia de cada variable por componente
+melted <- melt(main_pca$loadings[,1:npc_opt])
+```
+Se realiza el cálculo de la importancia por cada componente, luego se ordena de manera ascendente, se seleccionan las primeras cuatro variables de cada componente, y se eliminan las duplicadas.
+
+```{r, echo=false}
+# df_melted_sorted <- melted %>% arrange(Var2, desc(melted$value_abs)) %>%  group_by(Var2) %>% slice(1:4)
+# important_vars_name <- unique(df_melted_sorted$Var1)
+```
+
+A continuación se presenta gráficamente la importancia de las variables para las primeras 3 componentes:
 
 ```{r}
-#Importancia de cada variable por componente
-melted <- melt(main_pca$loadings[,1:9])
-ggplot(data = melted) +
-  theme(legend.position = "none", axis.text.x = element_blank(), 
-        axis.ticks.x = element_blank()) + 
-  labs(x = "Measurements in College Scorecard data",
-       y = "Relative importance in each principle component",
-       title = "Variables in Principal Component Analysis") +
-  geom_bar(aes(x=Var1, y=value, fill=Var1), stat="identity") +
-  facet_wrap(~Var2)
+par(mfrow=c(2,2))
 
 melted$value_abs<-abs(melted$value)
 melted_sort <- melted[order(melted$value_abs,decreasing = T),]
 
-
 # Individualmente para ver cada variable
 
-#Componente1
+# Componente1
 melted_sort1<-melted_sort %>%  filter(Var2=="Comp.1") %>% head(10)
 
 ggplot(data = melted_sort1[melted_sort1$Var2 == "Comp.1",]) +
@@ -265,7 +269,7 @@ ggplot(data = melted_sort1[melted_sort1$Var2 == "Comp.1",]) +
   geom_bar(aes(x=reorder(Var1,-value_abs), y=value_abs, fill=Var1), stat="identity")
 
 
-#Componente 2
+# Componente 2
 melted_sort2<-melted_sort %>% filter(Var2=="Comp.2") %>% head(10)
 
 ggplot(data = melted_sort2[melted_sort2$Var2 == "Comp.2",]) +
@@ -277,7 +281,7 @@ ggplot(data = melted_sort2[melted_sort2$Var2 == "Comp.2",]) +
        title = "Variables in PC2") +
   geom_bar(aes(x=reorder(Var1,-value_abs), y=value_abs, fill=Var1), stat="identity")
 
-#Componente 3
+# Componente 3
 melted_sort3<-melted_sort %>% filter(Var2=="Comp.3") %>% head(10)
 
 ggplot(data = melted_sort3[melted_sort3$Var2 == "Comp.3",]) +
@@ -289,34 +293,29 @@ ggplot(data = melted_sort3[melted_sort3$Var2 == "Comp.3",]) +
        title = "Variables in PC3") +
   geom_bar(aes(x=reorder(Var1,-value_abs), y=value_abs, fill=Var1), stat="identity")
 
-#Componente 4
-melted_sort4<-melted_sort %>% filter(Var2=="Comp.9") %>% head(10)
-
-ggplot(data = melted_sort4[melted_sort4$Var2 == "Comp.9",]) +
-  theme(legend.position = "none", 
-        axis.text.x= element_text(angle=45, hjust = 1), 
-        axis.ticks.x = element_blank()) + 
-  labs(x = "Variables ",
-       y = "Relative importance in principle component",
-       title = "Variables in PC9") +
-  geom_bar(aes(x=reorder(Var1,-value_abs), y=value_abs, fill=Var1), stat="identity")
-
 ```
 
-# Reconstrucción de representantes principales de los clusters
-```{r}
-centers <- clusters_final$centers[0:npc_opt]
-mu = colMeans(df_num)
+```{r, echo=FALSE}
 
-# calculamos los variables originales de los centros para cada cluster
-center_recon = as.matrix(centers[,1:npc_opt]) %*% t(main_pca$loadings[, 1:npc_opt])
-center_recon = scale(center_recon, center = -mu, scale = FALSE)
-
-cbind(center_recon, clusters_final$centers[(npc_opt+1):28])
+df_final_aux <- cbind(df_final$Comp.2, df_final$Comp.1)
+# clprofiles(clusters_final, df_final_aux)
 ```
+
+<!-- # Reconstrucción de representantes principales de los clusters -->
+<!-- ```{r} -->
+<!-- centers <- clusters_final$centers[0:npc_opt] -->
+<!-- mu = colMeans(df_num) -->
+
+<!-- # calculamos los variables originales de los centros para cada cluster -->
+<!-- center_recon = as.matrix(centers[,1:npc_opt]) %*% t(main_pca$loadings[, 1:npc_opt]) -->
+<!-- center_recon = scale(center_recon, center = -mu, scale = FALSE) -->
+
+<!-- # cbind(center_recon, clusters_final$centers[(npc_opt+1):28]) -->
+<!-- ``` -->
+
 # Agrupación de universidades en Colombia
 
-El Sistema Nacional de Información de la Educación Superior (SNIES) se encarga de compilar y estructurar diferentes datos referentes a las diferentes instituciones de educación superior del país (IES) [4]. El objetivo de este sistema es generar información que permita orientar a las IES en la toma de decisiones que permitan mejorar la calidad del sistema educativo y generar también indicadores que permitan evaluarlas. 
+El Sistema Nacional de Información de la Educación Superior (SNIES) se encarga de compilar y estructurar diferentes datos referentes a las diferentes instituciones de educación superior del país (IES) [4]. El objetivo de este sistema es generar información que permita orientar a las IES en la toma de decisiones que permitan mejorar la calidad del sistema educativo y generar también indicadores que permitan evaluarlas.
 
 En las bases consolidadas del SNIES se pueden encontrar datos que permitan generar algún tipo de agrupamiento como el desarrollado en el presente documento, datos como:
 
