@@ -20,6 +20,7 @@ library(klaR)
 library(clustMixType)
 library(reshape2)
 library(ggplot2)
+library(kableExtra)
 ```
 
 
@@ -61,7 +62,6 @@ df <- subset(df, select = -c(LATITUDE, LONGITUDE, ZIP, STABBR, st_fips, HBCU,
 
 df$LOCALE <- substr(df$LOCALE,1,1)
 
-# Algunas variables, a pesar de ser numéricas, tienen muy poca variabilidad: poolyrs
 ```
 
 ## Convertir los tipos de datos
@@ -79,8 +79,6 @@ df <- df %>%
                  PREDDEG, HIGHDEG, CURROPER), 
             list(as.factor)) %>% 
   mutate_at(vars(columnas_CIP$colnames.df.), list(as.factor))
-
-# st_fips se puede borrar y dejar solo region
 ```
 
 Por otra parte, se divide el conjunto de datos en variables númericas y categóricas con el fin de facilitar el procesamiento de las componentes principales. Sin embargo, en el conjunto de datos categórico quedaron varias variables numéricas, así que se obtuvo el índice de la última categórica y se extrajeron desde ese índice hasta el final las otra numéricas. Esto luego se unió con el conjunto total de variables numéricas. Las variables CIP* obtenidas previamente se eliminan ya que estas no representan una información fácil de interpretar para cada universidad. 
@@ -142,7 +140,9 @@ Con los datos numéricos extrapolados y estandarizados se hace un análisis de l
 main_pca <- princomp(df_num_scale)
 summary(main_pca)
 ```
+
 De lo anterior, se puede observar que las primeras 17 componentes explican, aproximadamente, el 80% de la variabilidad. Para confirmar esto analíticamente, se calcula la variabilidad acumulada de las componentes y se obtiene la mínima componente con un 80% aproximado de esta: 
+
 
 ```{r, echo=FALSE}
 # Variabilidad acumulada
@@ -154,10 +154,10 @@ npc_opt
 ```
 Lo cual confirma lo que se mostró anterior. Para ver gráficamente lo anterior: 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE,fig.cap = "Figura 1: Numero de CP que explican el 80% de variabilidad"}
 plot(prop_expl_var,
      type = "h", las = 1, xlim = c(1,90),
-     ylab = "Proporción de varianza explicada", xlab = "m", 
+     ylab = "Proporción de varianza explicada", xlab = "Numero Componentes",
      main = "Número óptimo de componentes principales")
 points(npc_opt, prop_expl_var[npc_opt],
        col = "red", lwd = 2)
@@ -171,8 +171,8 @@ segments(x0 = npc_opt, y0 = 0, x1 = npc_opt,
 
 Como resumen de las componentes, el siguiente gráfico muestra la varianza explicada por la primeras 10 componentes: 
 
-```{r, echo=FALSE}
-plot(main_pca, main = "Varianza por cada componente")
+```{r, echo=FALSE, fig.cap = "Figura 2: Grafico de la varianza por CP"}
+plot(main_pca, main = "Varianza por cada componente",xlab="Componentes Principales",las = 2, cex.names = 0.7)
 ```
 
 ## Reconstrucción del conjunto de datos
@@ -194,26 +194,28 @@ df_final <- delete.na(df_final)
 head(df_proy)
 ```
 
+Ahora se muestra un gráfico de pares para las primeras 5 componentes del conjunto de datos:
 
-```{r}
-# pairs(df_proy[,1:5])
+```{r, fig.cap= "Figura 3: Grafico de dispersion de las 5 CP"}
+pairs(df_proy[,1:5], main="Graficos de Dispersion CP")
 ```
+De esto se puede concluir que no existe algún tipo de relación entre las componentes evaluadas ya que la información no sigue algún patrón de linealidad. 
 
 # Agrupamiento de los datos
 
 Se determina la cantidad óptima de clúster probando con diferentes valores de K y se evalúan con el Método de Codo (el cual calcula la suma del cuadrado de los errores para cada clúster). Para esto se hace uso del método *kproto*. 
 
-```{r, echo=FALSE, include=FALSE}
+```{r, fig.cap="Figura 4: Grafica de Codo para k optimo"}
 # Elbow Method for finding the optimal number of clusters
 set.seed(130622)
 
 # Compute and plot wss for k = 2 to k = 15.
 k.max <- 15
 
-wss <- sapply(1:k.max, 
+wss <- sapply(1:k.max,
               function(k){kproto(df_final, k, na.rm = FALSE)$tot.withinss})
 plot(1:k.max, wss,
-     type="b", pch = 19, frame = FALSE, 
+     type="b", pch = 19, frame = FALSE,
      xlab="Number of clusters K",
      ylab="Total within-clusters sum of squares")
 ```
@@ -229,9 +231,17 @@ clusters_final <- kproto(df_final, k_opt, na.rm = FALSE, verbose=FALSE)
 ```
 
 Teniendo el agrupamiento, se proyectan las componentes 1 y 2 en este para observar cómo se distribuyen. Este es el resultado:
-```{r, echo=FALSE}
+
+```{r, echo=FALSE, fig.cap= "Figura 5: Comp 1 vs Copm 2 discriminado por su respectivo cluster"}
 df_final$clus <- as.factor(clusters_final$cluster)
-plot(df_final$Comp.1, df_final$Comp.2, col=df_final$clus)
+
+plot(df_final$Comp.1, df_final$Comp.2, col=df_final$clus, 
+     xlab="Componente Principal 1", 
+     ylab="Componente Principal 2", 
+     main = "Componente 1 vs Componente 2", 
+     pch = c(15, 16, 17, 18, 19)[as.numeric(df_final$clus)])
+
+legend("topleft", legend = paste("Cluster", 1:4), pch=c(15, 16, 17, 18, 19), col=1:4)
 ```
 
 Adicionalmente, se puede calcular la importancia de cada variable en las componentes. Esto ayuda para la elección de los representantes de cada clúster. Esto se lleva todas las componentes y se hace uso del método *melt*:  
@@ -297,16 +307,51 @@ ggplot(data = melted_sort3[melted_sort3$Var2 == "Comp.3",]) +
 
 ```
 
-```{r}
-df_original_total <- df_num[,(colnames(df_num) %in% important_vars_name$ImportantVars)]
+De manera general, en la componente 2 se observa que tanto las variables más importantes (DEBT_MDN, DEBT_MDN_SUPP, etc) como el resto tienen relación con deuda que tiene los estudiantes que aún estudian. Por ende, es un indicio que esta componente trata de describir la información relacionada con las deudas de los estudiantes actuales. Por otra parte, la componente 3 tiene también una relación con las deudas, sin embargo la información que contiene está asociada a los estudiantes ya graduados.
 
-df_original_total <- cbind(df_original_total, df_fact_nocip)
+# Análisis sobre los clústers
+
+Las variables con mayor importancia por componente se unen con las categóricas para realizar un análisis conjunto. A este, además, se le agrega una columna que especifica a qué clúster pertenece cada registro. Esta columna se utiliza para agrupar los registros por clúster y calcular la media y la mediana de cada variable en cada uno de los clústers.  
+Se muestra el resumen de los datos con la métrica del promedio:
+
+```{r, echo=F}
+df_original_total <- df_num[,(colnames(df_num) %in% important_vars_name$ImportantVars)]
 df_original_total$CLUSTER <- as.factor(clusters_final$cluster)
 
-df_original_total %>% group_by(df_original_total$CLUSTER) %>% summarise(MediaPor)
-clprofiles(clusters_final, df_original_total)
+
+df_filter_mean <- df_original_total %>% group_by(CLUSTER) %>% summarise_all("mean")
+df_filter_mean
 ```
 
+
+Similarmente, el análisis con la mediana:
+
+```{r, echo=F}
+df_filter_median <- df_original_total %>% group_by(CLUSTER) %>% summarise_all("median")
+kable(df_filter_median)
+```
+
+
+```{r, echo=F}
+df_fact_nocip$CLUSTER <- as.factor(clusters_final$cluster)
+clprofiles(clusters_final, df_fact_nocip)
+```
+De acuerdo a las gráficas anteriores se puede realizar un análisis para las siguientes variables:
+
+* **Main**: esta variable especifica si el registro de una universidad es un campus principal. En este caso, se puede observar que la mayoría de las universidad que son un campus un principal se encuentran en los clústers 3 y 4. Además, la distrubución de los que no son principales es similar en los clústers 1 y 2. 
+* **PREDDEG**: representa el grado predominante otorgado por una universidad. De su gráfica, se puede determinar que la mayoría de las universidades que tienen como grado predonominante los certificados se encuentran en el clúster 1. Además, gran parte de las universidades con grado predominante de títulos profesionales se encuentran en el clúster 3. Cabe destacar que en el clúster 2 y 4 se ubican las universidad con grados predominantes de técnicos. 
+* **HIGHDEG**: representa el mayor grado que ofrece una universidad. En el clúster 1, en su mayoría, el mayor grado que ofrece una universidad son los certificados; mientras que en el clúster 4 son los grados técnicos. En el clúster 3 se ubican las universidades que ofrecen como mayor grado uno profesional. Finalmente, cabe resaltar que en el clúster 2 existe una distrubución similar de las cuatro categorías.
+* **CONTROL**: especifica el tipo de universidad: pública, privada sin ánimo de lucro y privada con ánimo de lucro. De aquí se puede interpretar que las universidades que pertenecen al clúster 1 y 2, en su mayoría, son privadas con ánimo de lucro. Mientras que la mayoría que pertenecen al clúster 4 son públicas. Finalmente, en el clúster 3 se pueden encontrar una combinación de públicas y privadas sin ánimo de lucro. 
+
+```{r}
+centers <- clusters_final$centers[0:npc_opt]
+mu = colMeans(df_num)
+# calculamos los variables originales de los centros para cada cluster
+center_recon = as.matrix(centers[,1:npc_opt]) %*% t(main_pca$loadings[, 1:npc_opt])
+center_recon = as.data.frame(scale(center_recon, center = -mu, scale = FALSE))
+
+cbind(center_recon, clusters_final$centers[(npc_opt+1):27])
+```
 
 
 # Agrupación de universidades en Colombia
