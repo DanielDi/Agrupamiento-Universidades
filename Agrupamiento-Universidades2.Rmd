@@ -179,7 +179,7 @@ plot(main_pca, main = "Varianza por cada componente",xlab="Componentes Principal
 
 Se necesita tener la proyección del conjunto de datos sobre las componentes principales óptimas, para luego unirlo con el conjunto categórico. Esta proyección se realiza obteniendo los vectores propios de estas componentes, y aplicando un producto de matrices entre estos vectores y el conjunto de datos numéricos. Finalmente, se une este nuevo conjunto de datos con el categórico. 
 
-```{r}
+```{r, echo=FALSE}
 # Vectores propios
 eigen <- main_pca$loadings[, 1:npc_opt]
 
@@ -196,7 +196,7 @@ head(df_proy)
 
 Ahora se muestra un gráfico de pares para las primeras 5 componentes del conjunto de datos:
 
-```{r, fig.cap= "Figura 3: Grafico de dispersion de las 5 CP"}
+```{r, echo=FALSE, fig.cap= "Figura 3: Grafico de dispersion de las 5 CP"}
 pairs(df_proy[,1:5], main="Graficos de Dispersion CP")
 ```
 De esto se puede concluir que no existe algún tipo de relación entre las componentes evaluadas ya que la información no sigue algún patrón de linealidad. 
@@ -205,7 +205,7 @@ De esto se puede concluir que no existe algún tipo de relación entre las compo
 
 Se determina la cantidad óptima de clúster probando con diferentes valores de K y se evalúan con el Método de Codo (el cual calcula la suma del cuadrado de los errores para cada clúster). Para esto se hace uso del método *kproto*. 
 
-```{r, fig.cap="Figura 4: Grafica de Codo para k optimo"}
+```{r, include=FALSE, echo = FALSE, fig.cap="Figura 4: Grafica de Codo para k optimo"}
 # Elbow Method for finding the optimal number of clusters
 set.seed(130622)
 
@@ -214,6 +214,10 @@ k.max <- 15
 
 wss <- sapply(1:k.max,
               function(k){kproto(df_final, k, na.rm = FALSE)$tot.withinss})
+
+```
+
+```{r, echo=FALSE, fig.cap="Figura 4: Grafica de Codo para k optimo"}
 plot(1:k.max, wss,
      type="b", pch = 19, frame = FALSE,
      xlab="Number of clusters K",
@@ -246,7 +250,7 @@ legend("topleft", legend = paste("Cluster", 1:4), pch=c(15, 16, 17, 18, 19), col
 
 Adicionalmente, se puede calcular la importancia de cada variable en las componentes. Esto ayuda para la elección de los representantes de cada clúster. Esto se lleva todas las componentes y se hace uso del método *melt*:  
 
-```{r, include=TRUE, cache=FALSE}
+```{r, echo=FALSE}
 # Importancia de cada variable por componente
 melted <- melt(main_pca$loadings[,1:npc_opt])
 
@@ -262,7 +266,7 @@ colnames(important_vars_name) = c("ImportantVars")
 
 A continuación se presenta gráficamente la importancia de las variables para las primeras 3 componentes:
 
-```{r}
+```{r, echo=FALSE}
 
 melted_sort <- melted[order(melted$value_abs,decreasing = T),]
 
@@ -307,30 +311,14 @@ ggplot(data = melted_sort3[melted_sort3$Var2 == "Comp.3",]) +
 
 ```
 
-De manera general, en la componente 2 se observa que tanto las variables más importantes (DEBT_MDN, DEBT_MDN_SUPP, etc) como el resto tienen relación con deuda que tiene los estudiantes que aún estudian. Por ende, es un indicio que esta componente trata de describir la información relacionada con las deudas de los estudiantes actuales. Por otra parte, la componente 3 tiene también una relación con las deudas, sin embargo la información que contiene está asociada a los estudiantes ya graduados.
+De manera general, en la componente 1 se muestran variables con porcentaje de padres cuyo nivel académico más alto es postscundaria o secundaria, porcentaje de estudiantes financieramente independientes y porcentaje de estudiantes de primera generación. En la componente 2 se observa que tanto las variables más importantes (DEBT_MDN, DEBT_MDN_SUPP, etc) como el resto tienen relación con deuda que tiene los estudiantes que aún estudian. Por ende, es un indicio que esta componente trata de describir la información relacionada con las deudas de los estudiantes actuales. Por otra parte, la componente 3 tiene también una relación con las deudas, sin embargo la información que contiene está asociada a los estudiantes ya graduados.
 
 # Análisis sobre los clústers
 
 Las variables con mayor importancia por componente se unen con las categóricas para realizar un análisis conjunto. A este, además, se le agrega una columna que especifica a qué clúster pertenece cada registro. Esta columna se utiliza para agrupar los registros por clúster y calcular la media y la mediana de cada variable en cada uno de los clústers.  
-Se muestra el resumen de los datos con la métrica del promedio:
+Se muestra el resumen de los datos con la métrica del promedio:  
 
-```{r, echo=F}
-df_original_total <- df_num[,(colnames(df_num) %in% important_vars_name$ImportantVars)]
-df_original_total$CLUSTER <- as.factor(clusters_final$cluster)
-
-
-df_filter_mean <- df_original_total %>% group_by(CLUSTER) %>% summarise_all("mean")
-df_filter_mean
-```
-
-
-Similarmente, el análisis con la mediana:
-
-```{r, echo=F}
-df_filter_median <- df_original_total %>% group_by(CLUSTER) %>% summarise_all("median")
-kable(df_filter_median)
-```
-
+El análisis para las variable categóricas se hace por medio de los porcentajes de distribución de cada variable en los clúster, como se muestra a continuación
 
 ```{r, echo=F}
 df_fact_nocip$CLUSTER <- as.factor(clusters_final$cluster)
@@ -343,14 +331,28 @@ De acuerdo a las gráficas anteriores se puede realizar un análisis para las si
 * **HIGHDEG**: representa el mayor grado que ofrece una universidad. En el clúster 1, en su mayoría, el mayor grado que ofrece una universidad son los certificados; mientras que en el clúster 4 son los grados técnicos. En el clúster 3 se ubican las universidades que ofrecen como mayor grado uno profesional. Finalmente, cabe resaltar que en el clúster 2 existe una distrubución similar de las cuatro categorías.
 * **CONTROL**: especifica el tipo de universidad: pública, privada sin ánimo de lucro y privada con ánimo de lucro. De aquí se puede interpretar que las universidades que pertenecen al clúster 1 y 2, en su mayoría, son privadas con ánimo de lucro. Mientras que la mayoría que pertenecen al clúster 4 son públicas. Finalmente, en el clúster 3 se pueden encontrar una combinación de públicas y privadas sin ánimo de lucro. 
 
-```{r}
+Como se observó previamente, esta es la proyección de la componente 1 y 2 sobre el modelo de agrupamiento:
+
+```{r, echo=FALSE, fig.cap= "Figura 6: Comp 1 vs Copm 2 discriminado por su respectivo cluster"}
+plot(df_final$Comp.1, df_final$Comp.2, col=df_final$clus, 
+     xlab="Componente Principal 1", 
+     ylab="Componente Principal 2", 
+     main = "Componente 1 vs Componente 2", 
+     pch = c(15, 16, 17, 18, 19)[as.numeric(df_final$clus)])
+
+legend("topleft", legend = paste("Cluster", 1:4), pch=c(15, 16, 17, 18, 19), col=1:4)
+```
+
+Al tener un resumen general del significado de cada componente se puede dar una posible explicación a este agrupamiento en particular. Por ejemplo, se puede apreciar que la componente 1 tiene valores relativamente altos para el clúster 1, lo que significa que en este grupo de universidades se tiene un alto porcentaje de estudiantes de primera generación, como también que sus padres han recibido una educación igual o superior a la secundaria. Por otra parte, en el cluster 2 se tienen los valores más altos para la componente 2, lo que conlleva a que los estudiantes de estas universidades tienen un alto porcentaje de endudamiento con las entidades financieras. Otra observación es que los estudiantes del clúster 2 (los de mayor endeudamiento) hacen parte de universidades privadas con ánimo de lucro. Finalmente, se pueden mezclar las observaciones para obsevar que los estudiantes con menor endeudamiento vienen de familias en las cuales no tienen una preparación educativa alta, además que son dependientes financieramente de los padres.
+
+```{r, echo = FALSE}
 centers <- clusters_final$centers[0:npc_opt]
 mu = colMeans(df_num)
 # calculamos los variables originales de los centros para cada cluster
 center_recon = as.matrix(centers[,1:npc_opt]) %*% t(main_pca$loadings[, 1:npc_opt])
 center_recon = as.data.frame(scale(center_recon, center = -mu, scale = FALSE))
 
-cbind(center_recon, clusters_final$centers[(npc_opt+1):27])
+aux_centers <- cbind(center_recon, clusters_final$centers[(npc_opt+1):27])
 ```
 
 
@@ -367,11 +369,25 @@ En las consultas públicas se puede encontrar una base de datos con información
 
 Con estos datos se pueden generar algunos datos relevantes similares a los que se encontraron en el presente documento, como por ejemplo, tasas de admision, localidad, modalidad, campus principal, acreditación, nivel más alto, entre otros. También hay otros datos relevantes que no se han encontrado o no son de dominio público, por ejemplo, los créditos y becas otorgados a estudiantes, precio del programa y alumnos distinguiendo por etnia o condiciones físicas o mentales. Algunos de estos datos pueden ser encontrados en las encuestas de calidad de vida del DANE, pero es posible que no se tenga información de la ies asociada al encuestado. 
 
+# Conclusiones
+
+* La estructura del conjunto de datos dificultó que se pudiese hacer un análisis más detallado y preciso debido a que contenía muchos datos null, muchas características no tenían datos suficientes y eran relevantes para el análisis.
+
+* Tener las componentes principales facilitó ver las relaciones entre variables que, en principio, no se podían apreciar. Esto, además, ayudó a entrelazar significados de diferentes variables.
+
+* Se tuvo una interpretación más sencilla de las variables categóricas en los clúster en comparación con las numéricas. Esto puede ser porque las numéricas estaban representadas a través de componentes principales, lo cual hace más difícil su interpretación individual. 
+
+# Recomendaciones
+
+* Realizar un estudio más detallado sobre cada variable del conjunto de datos para determinar cuáles de estas tienen mayor relevancia para el estudio o cuáles pueden ser eliminadas directamente. 
+
+* En este trabajo no se tuvieron en cuenta los nombres de las instituciones, sin embargo se cree que al tenerlas se tiene una mejor interpretación de los clúster y puede dar mejores resultados para tomar decisiones. 
+
 
 # Bibliografía
 
 [1] G. James, *Et all*, *An Introduction to Statistical Learning with  Applications in R*. New York :Springer, 2013. [E-book].  
 [2] Klaudia. Bury, 'Clustering on PCA results', 2021. [Online]. Available: https://rpubs.com/Bury/ClusteringOnPcaResults. [Accessed: 11- Jun- 2022]
 [3] Luke. Hayden, 'Principal Component Analysis in R Tutorial ', 2018. [Online]. Available: https://www.datacamp.com/tutorial/pca-analysis-r. [Accessed: 09- Jun- 2022]
-[4] Qué es el SNIES. Snies.mineducacion.gov.co. (2022). Retrieved 14 June 2022, from https://snies.mineducacion.gov.co/portal/EL-SNIES/Que-es-el-SNIES/.
+[4] Qué es el SNIES. Snies.mineducacion.gov.co. (2022). Retrieved 14 June 2022, from https://snies.mineducacion.gov.co/portal/EL-SNIES/Que-es-el-SNIES/.  
 [5] Información Poblacional - SNIES. Hecaa.mineducacion.gov.co. (2022). Retrieved 14 June 2022, from https://hecaa.mineducacion.gov.co/consultaspublicas/ies.
